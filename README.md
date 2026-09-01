@@ -8,7 +8,7 @@ TypeScript 极简 Agent Harness：Agent Loop + Tool Calling。对照 [learn-clau
 用户输入
   → messages = [user, ...history]
   → LLM（OpenAI 兼容 API + tools）
-  → Session 事件写入 .harness/sessions.db（Hook subscriber）
+  → Session 事件写入 .mini-harness/sessions.db（Hook subscriber）
   → PreToolUse（permission + [HOOK] log）→ executeTool → PostToolUse
   → PostToolBatch（todo reminder）
   → Stop hook 统计 tool 次数
@@ -35,6 +35,7 @@ TypeScript 极简 Agent Harness：Agent Loop + Tool Calling。对照 [learn-clau
 | `src/tools/bash.ts` | bash 执行 |
 | `src/tools/file.ts` | read / write / glob + safePath |
 | `src/tools/index.ts` | tool schemas + dispatch（含 load_skill） |
+| `src/runtime/paths.ts` | `.mini-harness/` 工作区路径（P5c） |
 | `src/runtime/types.ts` | 类型与常量 |
 
 ## 模型 SDK
@@ -51,13 +52,26 @@ TypeScript 极简 Agent Harness：Agent Loop + Tool Calling。对照 [learn-clau
 
 Harness 层逻辑：传 `messages` + `tools` → 收 `tool_calls` → 本地执行 → `role: tool` 回灌。
 
+## 工作区布局（`.mini-harness/`）
+
+运行时数据集中在项目根下的 `.mini-harness/`（仿 Hermes 式 dot 目录，不进 git）：
+
+```text
+.mini-harness/
+├── .env              # API 密钥与模型配置
+├── sessions.db       # Session 事件 log
+└── skills/           # SKILL.md（可选；无则 catalog 为空）
+    └── <name>/SKILL.md
+```
+
 ## 运行
 
 ```bash
 cd /home/stt/agent-career/projects/mini-harness-ts
-cp .env.example .env   # 若尚无 .env；填入 OPENAI_API_KEY
+mkdir -p .mini-harness
+cp .env.example .mini-harness/.env   # 填入 OPENAI_API_KEY
 npm install
-npm run dev    # 新 session，写入 .harness/sessions.db
+npm run dev    # 新 session，写入 .mini-harness/sessions.db
 npm run dev -- --resume <session_id>
 npm run dev -- --list-sessions
 npm test
@@ -87,6 +101,7 @@ npm test
 | P4 | Skill Loading | ✅ |
 | P5a | s04 Hook 框架 | ✅ |
 | P5b | Session + SQLite | ✅ |
+| P5c | `.mini-harness/` 工作区布局 | ✅ |
 
 ## 概念覆盖（求职 / 口头讲解）
 

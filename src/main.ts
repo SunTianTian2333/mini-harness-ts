@@ -1,14 +1,22 @@
 import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import { config as loadEnv } from "dotenv";
 
 import { runLoop } from "./agent/loop.js";
 import { setupDefaultHooks } from "./hooks/setup.js";
 import { triggerSideEffectHooks } from "./hooks/registry.js";
 import { getModelId } from "./llm/client.js";
+import { migrateLegacyWorkspaceLayout } from "./runtime/migrate.js";
+import {
+  ensureMiniHarnessRoot,
+  getEnvPath,
+  getMiniHarnessRoot,
+  getSessionDbPath,
+} from "./runtime/paths.js";
 import { generateSessionId } from "./session/id.js";
 import { projectToMessages } from "./session/project.js";
 import { warnResumeCwdMismatch } from "./session/resume.js";
-import { getSessionDbPath, SessionDatabase } from "./session/sqlite.js";
+import { SessionDatabase } from "./session/sqlite.js";
 import { createNewSessionStore, resumeSessionStore, type SessionStore } from "./session/store.js";
 import { initSkillLoader } from "./skill/loader.js";
 import type { ChatMessage } from "./runtime/types.js";
@@ -32,6 +40,10 @@ function parseCliArgs(argv: string[]): { resumeId?: string; listSessions?: boole
 
 async function main(): Promise<void> {
   const cwd = process.cwd();
+  migrateLegacyWorkspaceLayout(cwd);
+  ensureMiniHarnessRoot(cwd);
+  loadEnv({ path: getEnvPath(cwd) });
+
   const { resumeId, listSessions } = parseCliArgs(process.argv);
   const dbPath = getSessionDbPath(cwd);
   const db = new SessionDatabase(dbPath);
@@ -88,6 +100,7 @@ async function main(): Promise<void> {
 
   console.log("mini-harness-ts · Phase 5b: Session + SQLite");
   console.log(`Workspace: ${cwd}`);
+  console.log(`Workspace store: ${getMiniHarnessRoot(cwd)}`);
   console.log(`Model: ${model}`);
   console.log(`Session: ${sessionStore.sessionId}`);
   console.log(`DB: ${dbPath}`);

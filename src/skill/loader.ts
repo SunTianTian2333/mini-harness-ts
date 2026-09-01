@@ -3,6 +3,8 @@ import { isAbsolute, join, relative, resolve } from "node:path";
 
 import { parse as parseYaml } from "yaml";
 
+import { getSkillsDir } from "../runtime/paths.js";
+
 export interface SkillRecord {
   name: string;
   description: string;
@@ -148,7 +150,7 @@ export class SkillLoader {
 let loader: SkillLoader | null = null;
 
 export function initSkillLoader(cwd: string): SkillLoader {
-  loader = new SkillLoader(join(cwd, "skills"));
+  loader = new SkillLoader(getSkillsDir(cwd));
   return loader;
 }
 

@@ -1,5 +1,4 @@
 import OpenAI from "openai";
-import "dotenv/config";
 
 import type { ChatMessage, ChatTool } from "../runtime/types.js";
 
@@ -9,7 +8,9 @@ function getClient(): OpenAI {
   if (!client) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      throw new Error("Missing OPENAI_API_KEY. Copy .env.example to .env and fill in your key.");
+      throw new Error(
+        "Missing OPENAI_API_KEY. Create .mini-harness/.env with OPENAI_API_KEY (see README).",
+      );
     }
     client = new OpenAI({
       apiKey,

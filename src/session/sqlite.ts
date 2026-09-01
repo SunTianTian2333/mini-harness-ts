@@ -1,13 +1,9 @@
 import { mkdirSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 
 import Database from "better-sqlite3";
 
 import type { SessionEventRecord, SessionEventType, SessionSummary } from "./types.js";
-
-export function getSessionDbPath(cwd: string): string {
-  return join(cwd, ".harness", "sessions.db");
-}
 
 export class SessionDatabase {
   private readonly db: Database.Database;

@@ -4,14 +4,19 @@ import { join } from "node:path";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
+import { MINI_HARNESS_DIR } from "../runtime/paths.js";
 import { SkillLoader } from "./loader.js";
+
+function skillsRoot(root: string): string {
+  return join(root, MINI_HARNESS_DIR, "skills");
+}
 
 function writeSkill(
   root: string,
   dirName: string,
   manifest: string,
 ): void {
-  const skillDir = join(root, "skills", dirName);
+  const skillDir = join(skillsRoot(root), dirName);
   mkdirSync(skillDir, { recursive: true });
   writeFileSync(join(skillDir, "SKILL.md"), manifest, "utf-8");
 }
@@ -32,7 +37,7 @@ UNIQUE_FULL_INSTRUCTION
 `;
     writeSkill(root, "code-review", manifest);
 
-    const loader = new SkillLoader(join(root, "skills"));
+    const loader = new SkillLoader(skillsRoot(root));
     assert.equal(
       loader.catalog(),
       "- code-review: Review code for bugs, regressions, and missing tests.",
@@ -52,7 +57,7 @@ description: 处理中文内容
 `;
     writeSkill(root, "chinese-skill", manifest);
 
-    const loader = new SkillLoader(join(root, "skills"));
+    const loader = new SkillLoader(skillsRoot(root));
     assert.equal(loader.load("chinese-skill"), manifest);
     assert.match(loader.catalog(), /处理中文内容/);
   });
@@ -90,11 +95,11 @@ description: |
     const outside = join(root, "outside-skill.md");
     writeFileSync(outside, "# External skill\n\nDO_NOT_LOAD", "utf-8");
 
-    const linkedDir = join(root, "skills", "linked-skill");
+    const linkedDir = join(skillsRoot(root), "linked-skill");
     mkdirSync(linkedDir, { recursive: true });
     symlinkSync(outside, join(linkedDir, "SKILL.md"));
 
-    const loader = new SkillLoader(join(root, "skills"));
+    const loader = new SkillLoader(skillsRoot(root));
     assert.match(loader.catalog(), /fallback-skill: Body description/);
     assert.match(loader.catalog(), /empty-skill:/);
     assert.match(loader.catalog(), /typed-fallback: Typed fallback/);
@@ -109,7 +114,7 @@ description: |
     const root = mkdtempSync(join(tmpdir(), "skill-test-"));
     writeSkill(root, "demo", "---\nname: demo\ndescription: Demo\n---\n# Demo\n");
 
-    const loader = new SkillLoader(join(root, "skills"));
+    const loader = new SkillLoader(skillsRoot(root));
     const result = loader.load("missing");
     assert.match(result, /Error: Unknown skill 'missing'/);
     assert.match(result, /Available: demo/);
@@ -117,7 +122,7 @@ description: |
 
   it("reports no skills when directory is missing", () => {
     const root = mkdtempSync(join(tmpdir(), "skill-test-"));
-    const loader = new SkillLoader(join(root, "skills"));
+    const loader = new SkillLoader(skillsRoot(root));
     assert.equal(loader.catalog(), "(no skills found)");
   });
 });
