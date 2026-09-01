@@ -42,4 +42,13 @@ export async function createAssistantTurn(
   return { message, finishReason: response.choices[0]?.finish_reason ?? null };
 }
 
+export async function createTextCompletion(prompt: string, maxTokens = 1000): Promise<string> {
+  const response = await getClient().chat.completions.create({
+    model: getModelId(),
+    messages: [{ role: "user", content: prompt }],
+    max_tokens: maxTokens,
+  });
+  return response.choices[0]?.message?.content?.trim() ?? "";
+}
+
 export { getModelId };

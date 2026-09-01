@@ -11,8 +11,8 @@ TypeScript 极简 Agent Harness：Agent Loop + Tool Calling。对照 [learn-clau
   → Session 事件写入 .mini-harness/sessions.db（Hook subscriber）
   → PreToolUse（permission + [HOOK] log）→ executeTool → PostToolUse
   → PostToolBatch（todo reminder）
-  → Stop hook 统计 tool 次数
-  → system 含 skill catalog；模型可 load_skill 按需加载全文
+  → Stop hook 统计 tool 次数 + memory extract（P6）
+  → 每轮 LLM 前 recall 相关 memory 注入 system
   → 再调 LLM，直到 assistant 无 tool_calls
   → 打印最终文本
 ```
@@ -36,6 +36,8 @@ TypeScript 极简 Agent Harness：Agent Loop + Tool Calling。对照 [learn-clau
 | `src/tools/file.ts` | read / write / glob + safePath |
 | `src/tools/index.ts` | tool schemas + dispatch（含 load_skill） |
 | `src/runtime/paths.ts` | `.mini-harness/` 工作区路径（P5c） |
+| `src/runtime/prompt.ts` | system prompt：skill catalog + memory recall（P6） |
+| `src/memory/` | Memory store / recall / extract / consolidate（P6） |
 | `src/runtime/types.ts` | 类型与常量 |
 
 ## 模型 SDK
@@ -60,8 +62,11 @@ Harness 层逻辑：传 `messages` + `tools` → 收 `tool_calls` → 本地执�
 .mini-harness/
 ├── .env              # API 密钥与模型配置
 ├── sessions.db       # Session 事件 log
-└── skills/           # SKILL.md（可选；无则 catalog 为空）
-    └── <name>/SKILL.md
+├── skills/           # SKILL.md（可选；无则 catalog 为空）
+│   └── <name>/SKILL.md
+└── memory/           # 持久记忆（P6）
+    ├── MEMORY.md     # 索引
+    └── *.md          # 单条记忆
 ```
 
 ## 运行
@@ -76,6 +81,10 @@ npm run dev -- --resume <session_id>
 npm run dev -- --list-sessions
 npm test
 ```
+
+试例（P6）：
+
+- 先说「我偏好用 tab 缩进」→ 完成一轮 → 新 session 问「我缩进偏好是什么」（应 recall 相关 memory）
 
 试例（P5b）：
 
@@ -102,6 +111,7 @@ npm test
 | P5a | s04 Hook 框架 | ✅ |
 | P5b | Session + SQLite | ✅ |
 | P5c | `.mini-harness/` 工作区布局 | ✅ |
+| P6 | Memory recall + extract + consolidate | ✅ |
 
 ## 概念覆盖（求职 / 口头讲解）
 
@@ -114,7 +124,7 @@ npm test
 | Todo / Reminder | ✅ `todo/` + PostToolBatch | s05 |
 | Skill Loading | ✅ `skill/` + load_skill | s07 |
 | Session 持久化 | ✅ `session/` + SQLite | —（对照 dsh L2） |
-| Memory / MCP | ❌ trace only | s09 / s14 |
+| Memory / MCP | ✅ memory（P6）；MCP ❌ | s09 / s14 |
 
 Spec：`docs/mini-harness-ts/` · SDD 约束：[`AGENTS.md`](../../AGENTS.md) §mini-harness-ts
 

@@ -1,6 +1,7 @@
 import { createContextInjectHook } from "./context.js";
 import { largeOutputHook } from "./large-output.js";
 import { logHook } from "./log.js";
+import { createMemoryExtractHook } from "./memory-extract.js";
 import { createPermissionHook } from "./permission.js";
 import { clearHooks, registerHook, registerPostToolBatchHook } from "./registry.js";
 import { reminderHook } from "./reminder.js";
@@ -22,6 +23,9 @@ export function setupDefaultHooks(cwd: string, sessionStore?: SessionStore): voi
   registerHook("PostToolUse", (...args) => largeOutputHook(args[0] as ToolCallBlock, args[1] as string));
   registerPostToolBatchHook(reminderHook);
   registerHook("Stop", (...args) => summaryHook(args[0] as ChatMessage[]));
+
+  const memoryExtractHook = createMemoryExtractHook(cwd);
+  registerHook("Stop", (...args) => memoryExtractHook(args[0] as ChatMessage[]));
 
   if (sessionStore) {
     const sessionLog = createSessionLogHooks(sessionStore);

@@ -1,18 +1,19 @@
 import { triggerHooks, triggerSideEffectHooks } from "../hooks/registry.js";
 import { createAssistantTurn } from "../llm/client.js";
+import { buildSystemPrompt } from "../runtime/prompt.js";
 import type { ChatMessage } from "../runtime/types.js";
-import { MAX_TURNS, getSystemPrompt } from "../runtime/types.js";
+import { MAX_TURNS } from "../runtime/types.js";
 import { TodoReminderTracker } from "../todo/reminder.js";
 import { TOOL_SCHEMAS } from "../tools/index.js";
 import { runToolBatch } from "./tool-batch.js";
 
 export async function runLoop(messages: ChatMessage[], cwd: string): Promise<string> {
-  const system = getSystemPrompt(cwd);
   const todoReminder = new TodoReminderTracker();
 
   for (let turn = 0; turn < MAX_TURNS; turn += 1) {
     await triggerSideEffectHooks("TurnStart", turn);
 
+    const system = buildSystemPrompt(cwd, messages);
     const { message: msg, finishReason } = await createAssistantTurn(system, messages, TOOL_SCHEMAS);
 
     await triggerSideEffectHooks("LlmResponse", {

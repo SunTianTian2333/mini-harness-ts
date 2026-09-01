@@ -98,7 +98,7 @@ async function main(): Promise<void> {
     process.exit(0);
   });
 
-  console.log("mini-harness-ts · Phase 5b: Session + SQLite");
+  console.log("mini-harness-ts · Phase 6: Memory");
   console.log(`Workspace: ${cwd}`);
   console.log(`Workspace store: ${getMiniHarnessRoot(cwd)}`);
   console.log(`Model: ${model}`);
@@ -113,7 +113,7 @@ async function main(): Promise<void> {
 
   try {
     while (true) {
-      const query = (await rl.question("\x1b[36mp5b >> \x1b[0m")).trim();
+      const query = (await rl.question("\x1b[36mp6 >> \x1b[0m")).trim();
       if (query.length === 0 || query.toLowerCase() === "q" || query.toLowerCase() === "exit") {
         break;
       }
