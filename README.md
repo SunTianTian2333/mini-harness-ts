@@ -7,9 +7,13 @@ TypeScript 极简 Agent Harness：Agent Loop + Tool Calling。对照 [learn-clau
 ```text
 用户输入
   → messages = [user, ...history]
-  → LLM（Anthropic messages.create + tools）
-  → 若有 tool_use：本地 executeTool → tool_result 写回 messages
-  → 再调 LLM，直到 assistant 无 tool_use
+  → LLM（OpenAI 兼容 API + tools）
+  → Session 事件写入 .harness/sessions.db（Hook subscriber）
+  → PreToolUse（permission + [HOOK] log）→ executeTool → PostToolUse
+  → PostToolBatch（todo reminder）
+  → Stop hook 统计 tool 次数
+  → system 含 skill catalog；模型可 load_skill 按需加载全文
+  → 再调 LLM，直到 assistant 无 tool_calls
   → 打印最终文本
 ```
 
@@ -19,8 +23,18 @@ TypeScript 极简 Agent Harness：Agent Loop + Tool Calling。对照 [learn-clau
 |------|------|
 | `src/main.ts` | CLI 入口 |
 | `src/agent/loop.ts` | 核心 loop |
-| `src/llm/client.ts` | Anthropic SDK 封装 |
-| `src/tools/bash.ts` | bash tool schema + 执行 |
+| `src/session/` | SessionStore + SQLite + projectToMessages（P5b） |
+| `src/hooks/` | s04 Hook + sessionLog subscriber（P5a/P5b） |
+| `src/agent/tool-batch.ts` | 单轮 tool 执行；triggerHooks |
+| `src/skill/loader.ts` | SkillLoader：扫描 catalog + load 全文 |
+| `src/tools/skill.ts` | load_skill 工具 |
+| `src/todo/manager.ts` | TodoManager 内存态 |
+| `src/todo/reminder.ts` | rounds_since_todo 计数 |
+| `src/tools/todo.ts` | todo_write 工具 |
+| `src/llm/client.ts` | OpenAI 兼容 SDK 封装 |
+| `src/tools/bash.ts` | bash 执行 |
+| `src/tools/file.ts` | read / write / glob + safePath |
+| `src/tools/index.ts` | tool schemas + dispatch（含 load_skill） |
 | `src/runtime/types.ts` | 类型与常量 |
 
 ## 模型 SDK
@@ -43,22 +57,49 @@ Harness 层逻辑：传 `messages` + `tools` → 收 `tool_calls` → 本地执�
 cd /home/stt/agent-career/projects/mini-harness-ts
 cp .env.example .env   # 若尚无 .env；填入 OPENAI_API_KEY
 npm install
-npm run dev
+npm run dev    # 新 session，写入 .harness/sessions.db
+npm run dev -- --resume <session_id>
+npm run dev -- --list-sessions
+npm test
 ```
 
-试例：
+试例（P5b）：
 
-- `列出当前目录下的文件`
-- `统计 src 目录有多少个 .ts 文件`
+- 对话一轮 → 退出 → `--resume <id>` → 问「刚才我说了什么」
+
+试例（P4）：
+
+- `按 code-review skill 检查 src/tools/bash.ts`（应先 load_skill 再 read_file）
+- `给 loop.ts 加一行注释，并更新 README 说明 P4 已完成`（todo_write + edit）
+
+试例（P3）：
+
+- `给 loop.ts 加一行注释，并更新 README 说明 P3 已完成`（应先 todo_write 再 edit）
+- `用 glob 列出 src 下所有 .ts 文件`
 
 ## Phase 规划
 
 | Phase | 机制 | 状态 |
 |-------|------|------|
-| P1 | Agent Loop + bash | ✅ 当前 |
-| P2 | read/write/glob + permission | 待做 |
-| P3 | TodoWrite | 待做 |
-| P4 | Skill Loading | 待做 |
+| P1 | Agent Loop + bash | ✅ |
+| P2 | read/write/glob + permission | ✅ |
+| P3 | TodoWrite | ✅ |
+| P4 | Skill Loading | ✅ |
+| P5a | s04 Hook 框架 | ✅ |
+| P5b | Session + SQLite | ✅ |
+
+## 概念覆盖（求职 / 口头讲解）
+
+| 概念 | 本项目 | learn-claude-code |
+|------|--------|-------------------|
+| Agent Loop | ✅ `loop.ts` | s01 |
+| Tool Calling | ✅ `tools/` | s02 |
+| Permission | ✅ `hooks/permission.ts` | s03 → s04 Hook |
+| Hook 扩展 | ✅ `hooks/registry.ts` | s04 |
+| Todo / Reminder | ✅ `todo/` + PostToolBatch | s05 |
+| Skill Loading | ✅ `skill/` + load_skill | s07 |
+| Session 持久化 | ✅ `session/` + SQLite | —（对照 dsh L2） |
+| Memory / MCP | ❌ trace only | s09 / s14 |
 
 Spec：`docs/mini-harness-ts/` · SDD 约束：[`AGENTS.md`](../../AGENTS.md) §mini-harness-ts
 

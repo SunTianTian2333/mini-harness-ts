@@ -5,8 +5,6 @@ import type { ChatTool } from "../runtime/types.js";
 
 const execFileAsync = promisify(execFile);
 
-const DANGEROUS_PATTERNS = ["rm -rf /", "sudo", "shutdown", "reboot", "> /dev/"];
-
 export const BASH_TOOL: ChatTool = {
   type: "function",
   function: {
@@ -22,17 +20,7 @@ export const BASH_TOOL: ChatTool = {
   },
 };
 
-export const TOOL_SCHEMAS: ChatTool[] = [BASH_TOOL];
-
-function isDangerous(command: string): boolean {
-  return DANGEROUS_PATTERNS.some((pattern) => command.includes(pattern));
-}
-
 export async function runBash(command: string, cwd: string): Promise<string> {
-  if (isDangerous(command)) {
-    return "Error: Dangerous command blocked";
-  }
-
   try {
     const { stdout, stderr } = await execFileAsync("/bin/bash", ["-lc", command], {
       cwd,
@@ -53,15 +41,4 @@ export async function runBash(command: string, cwd: string): Promise<string> {
     }
     return "Error: Unknown execution failure";
   }
-}
-
-export async function executeTool(name: string, input: Record<string, unknown>, cwd: string): Promise<string> {
-  if (name !== "bash") {
-    return `Error: Unknown tool "${name}"`;
-  }
-  const command = input.command;
-  if (typeof command !== "string" || command.trim().length === 0) {
-    return "Error: bash requires a non-empty command string";
-  }
-  return runBash(command, cwd);
 }

@@ -1,5 +1,7 @@
 import type OpenAI from "openai";
 
+import { getSkillLoader } from "../skill/loader.js";
+
 /** OpenAI Chat Completions 消息格式（DeepSeek 等兼容网关通用） */
 export type ChatMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam;
 
@@ -9,5 +11,11 @@ export type ChatTool = OpenAI.Chat.Completions.ChatCompletionTool;
 export const MAX_TURNS = 10;
 
 export function getSystemPrompt(cwd: string): string {
-  return `You are a coding agent at ${cwd}. Use bash to solve tasks. Act, don't explain.`;
+  const catalog = getSkillLoader().catalog();
+  return `You are a coding agent at ${cwd}. Use tools to solve tasks. Before multi-step work, use todo_write to plan steps and update status as you go. Destructive operations may require user approval. Act, don't explain.
+
+Skills available:
+${catalog}
+
+Use load_skill to read the full instructions when a skill applies.`;
 }

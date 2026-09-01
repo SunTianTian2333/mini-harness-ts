@@ -27,7 +27,7 @@ export async function createAssistantTurn(
   system: string,
   messages: ChatMessage[],
   tools: ChatTool[],
-): Promise<OpenAI.Chat.Completions.ChatCompletionMessage> {
+): Promise<{ message: OpenAI.Chat.Completions.ChatCompletionMessage; finishReason: string | null }> {
   const response = await getClient().chat.completions.create({
     model: getModelId(),
     messages: [{ role: "system", content: system }, ...messages],
@@ -38,5 +38,7 @@ export async function createAssistantTurn(
   if (!message) {
     throw new Error("LLM returned empty message");
   }
-  return message;
+  return { message, finishReason: response.choices[0]?.finish_reason ?? null };
 }
+
+export { getModelId };

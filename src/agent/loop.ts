@@ -1,59 +1,45 @@
+import { triggerHooks, triggerSideEffectHooks } from "../hooks/registry.js";
 import { createAssistantTurn } from "../llm/client.js";
 import type { ChatMessage } from "../runtime/types.js";
 import { MAX_TURNS, getSystemPrompt } from "../runtime/types.js";
-import { TOOL_SCHEMAS, executeTool } from "../tools/index.js";
+import { TodoReminderTracker } from "../todo/reminder.js";
+import { TOOL_SCHEMAS } from "../tools/index.js";
+import { runToolBatch } from "./tool-batch.js";
 
-/**
- * Agent Loop（OpenAI Tool Calling · DeepSeek 兼容）：
- * LLM → tool_calls? → execute → role=tool 回灌 → 直到模型不再调工具
- */
 export async function runLoop(messages: ChatMessage[], cwd: string): Promise<string> {
   const system = getSystemPrompt(cwd);
+  const todoReminder = new TodoReminderTracker();
 
   for (let turn = 0; turn < MAX_TURNS; turn += 1) {
-    const msg = await createAssistantTurn(system, messages, TOOL_SCHEMAS);
+    await triggerSideEffectHooks("TurnStart", turn);
+
+    const { message: msg, finishReason } = await createAssistantTurn(system, messages, TOOL_SCHEMAS);
+
+    await triggerSideEffectHooks("LlmResponse", {
+      content: msg.content ?? null,
+      tool_calls: msg.tool_calls,
+      finish_reason: finishReason,
+    });
 
     const assistantEntry: ChatMessage = {
       role: "assistant",
       content: msg.content ?? "",
+      ...(msg.tool_calls?.length ? { tool_calls: msg.tool_calls } : {}),
     };
-    if (msg.tool_calls && msg.tool_calls.length > 0) {
-      assistantEntry.tool_calls = msg.tool_calls;
-    }
     messages.push(assistantEntry);
 
-    if (!msg.tool_calls || msg.tool_calls.length === 0) {
+    if (!msg.tool_calls?.length) {
+      const force = await triggerHooks("Stop", messages);
+      if (force) {
+        messages.push({ role: "user", content: force });
+        continue;
+      }
       return msg.content ?? "(empty response)";
     }
 
-    for (const tc of msg.tool_calls) {
-      if (tc.type !== "function") {
-        continue;
-      }
-
-      let args: Record<string, unknown> = {};
-      try {
-        args = JSON.parse(tc.function.arguments) as Record<string, unknown>;
-      } catch {
-        messages.push({
-          role: "tool",
-          tool_call_id: tc.id,
-          content: "Error: invalid tool arguments JSON",
-        });
-        continue;
-      }
-
-      const command = typeof args.command === "string" ? args.command : "";
-      process.stdout.write(`\x1b[33m$ ${command}\x1b[0m\n`);
-
-      const output = await executeTool(tc.function.name, args, cwd);
-      process.stdout.write(`${output.slice(0, 200)}${output.length > 200 ? "…" : ""}\n`);
-
-      messages.push({
-        role: "tool",
-        tool_call_id: tc.id,
-        content: output,
-      });
+    const toolResults = await runToolBatch(msg.tool_calls, cwd, todoReminder);
+    for (const result of toolResults) {
+      messages.push({ role: "tool", tool_call_id: result.id, content: result.content });
     }
   }
 
