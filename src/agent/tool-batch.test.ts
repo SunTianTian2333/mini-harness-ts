@@ -44,7 +44,7 @@ describe("runToolBatch", () => {
       },
     ];
 
-    const results = await runToolBatch(toolCalls, WORKDIR, new TodoReminderTracker());
+    const { results } = await runToolBatch(toolCalls, WORKDIR, new TodoReminderTracker());
 
     assert.match(results[0]?.content ?? "", /invalid tool arguments JSON/);
 
@@ -72,7 +72,7 @@ describe("runToolBatch", () => {
       },
     ];
 
-    const results = await runToolBatch(toolCalls, WORKDIR, new TodoReminderTracker());
+    const { results } = await runToolBatch(toolCalls, WORKDIR, new TodoReminderTracker());
 
     assert.equal(results[0]?.content, "Permission denied.");
 

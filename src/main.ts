@@ -98,7 +98,7 @@ async function main(): Promise<void> {
     process.exit(0);
   });
 
-  console.log("mini-harness-ts · Phase 6: Memory");
+  console.log("mini-harness-ts · Phase 7: Context Compact");
   console.log(`Workspace: ${cwd}`);
   console.log(`Workspace store: ${getMiniHarnessRoot(cwd)}`);
   console.log(`Model: ${model}`);
@@ -120,7 +120,7 @@ async function main(): Promise<void> {
 
       await triggerSideEffectHooks("UserPromptSubmit", query);
       history.push({ role: "user", content: query });
-      const answer = await runLoop(history, cwd);
+      const answer = await runLoop(history, cwd, query);
       console.log(`\n${answer}\n`);
     }
   } finally {

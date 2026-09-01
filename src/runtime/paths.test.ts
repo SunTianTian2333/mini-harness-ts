@@ -8,6 +8,8 @@ import {
   getMiniHarnessRoot,
   getSessionDbPath,
   getSkillsDir,
+  getToolResultsDir,
+  getTranscriptsDir,
 } from "./paths.js";
 
 describe("mini-harness paths", () => {
@@ -19,5 +21,7 @@ describe("mini-harness paths", () => {
     assert.equal(getSessionDbPath(cwd), join(cwd, ".mini-harness", "sessions.db"));
     assert.equal(getSkillsDir(cwd), join(cwd, ".mini-harness", "skills"));
     assert.equal(getMemoryDir(cwd), join(cwd, ".mini-harness", "memory"));
+    assert.equal(getTranscriptsDir(cwd), join(cwd, ".mini-harness", "transcripts"));
+    assert.equal(getToolResultsDir(cwd), join(cwd, ".mini-harness", "tool-results"));
   });
 });

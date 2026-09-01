@@ -28,3 +28,11 @@ export function getSkillsDir(cwd: string): string {
 export function getMemoryDir(cwd: string): string {
   return join(getMiniHarnessRoot(cwd), "memory");
 }
+
+export function getTranscriptsDir(cwd: string): string {
+  return join(getMiniHarnessRoot(cwd), "transcripts");
+}
+
+export function getToolResultsDir(cwd: string): string {
+  return join(getMiniHarnessRoot(cwd), "tool-results");
+}

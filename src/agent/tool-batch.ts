@@ -33,8 +33,9 @@ export async function runToolBatch(
   toolCalls: ChatCompletionMessageToolCall[],
   cwd: string,
   todoReminder: TodoReminderTracker,
-): Promise<Array<{ id: string; content: string }>> {
+): Promise<{ results: Array<{ id: string; content: string }>; compactRequested: boolean }> {
   let usedTodo = false;
+  let compactRequested = false;
   const toolResults: Array<{ id: string; content: string }> = [];
 
   for (const tc of toolCalls) {
@@ -53,6 +54,15 @@ export async function runToolBatch(
 
     const block = toToolCallBlock(tc.id, tc.function.name, args);
     process.stdout.write(`\x1b[36m${formatToolLabel(block.name, block.input)}\x1b[0m\n`);
+
+    if (block.name === "compact") {
+      const output = "Compaction requested after this tool batch.";
+      process.stdout.write(`${output}\n`);
+      await triggerSideEffectHooks("PostToolUse", block, output);
+      toolResults.push({ id: block.id, content: output });
+      compactRequested = true;
+      continue;
+    }
 
     const blocked = await triggerHooks("PreToolUse", block);
     if (blocked) {
@@ -73,5 +83,5 @@ export async function runToolBatch(
 
   await triggerPostToolBatch({ results: toolResults, usedTodo, todoReminder });
 
-  return toolResults;
+  return { results: toolResults, compactRequested };
 }

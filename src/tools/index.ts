@@ -12,6 +12,7 @@ import {
 
 import { runTodoWrite, TODO_WRITE_TOOL } from "./todo.js";
 import { runLoadSkill, LOAD_SKILL_TOOL } from "./skill.js";
+import { COMPACT_TOOL } from "./compact.js";
 
 import type { ChatTool } from "../runtime/types.js";
 
@@ -28,6 +29,7 @@ export const TOOL_SCHEMAS: ChatTool[] = [
   GLOB_TOOL,
   TODO_WRITE_TOOL,
   LOAD_SKILL_TOOL,
+  COMPACT_TOOL,
 ];
 
 export async function executeTool(
