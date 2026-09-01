@@ -11,7 +11,7 @@ import { MemoryStore } from "../memory/store.js";
 import type { ChatMessage } from "./types.js";
 
 describe("buildSystemPrompt", () => {
-  it("includes memory catalog and recalled records", () => {
+  it("includes memory catalog and recalled records", async () => {
     const root = mkdtempSync(join(tmpdir(), "prompt-memory-"));
     mkdirSync(join(root, MINI_HARNESS_DIR, "memory"), { recursive: true });
     mkdirSync(join(root, MINI_HARNESS_DIR, "skills"), { recursive: true });
@@ -21,7 +21,9 @@ describe("buildSystemPrompt", () => {
     store.writeRecord("Indentation Preference", "user", "Prefers tabs for indentation", "Use tabs.");
 
     const messages: ChatMessage[] = [{ role: "user", content: "What indentation do I prefer?" }];
-    const prompt = buildSystemPrompt(root, messages);
+    const prompt = await buildSystemPrompt(root, messages, {
+      completeText: async () => "[0]",
+    });
 
     assert.match(prompt, /Memory catalog:/);
     assert.match(prompt, /Relevant memory records:/);

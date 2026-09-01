@@ -13,7 +13,7 @@ export async function runLoop(messages: ChatMessage[], cwd: string): Promise<str
   for (let turn = 0; turn < MAX_TURNS; turn += 1) {
     await triggerSideEffectHooks("TurnStart", turn);
 
-    const system = buildSystemPrompt(cwd, messages);
+    const system = await buildSystemPrompt(cwd, messages);
     const { message: msg, finishReason } = await createAssistantTurn(system, messages, TOOL_SCHEMAS);
 
     await triggerSideEffectHooks("LlmResponse", {

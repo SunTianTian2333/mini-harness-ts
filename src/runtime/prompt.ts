@@ -1,14 +1,18 @@
 import { getSkillLoader } from "../skill/loader.js";
-import { loadRecalledMemories } from "../memory/recall.js";
+import { loadRecalledMemories, type TextCompletion } from "../memory/recall.js";
 import { MemoryStore } from "../memory/store.js";
 import { getMemoryDir, getSkillsDir } from "./paths.js";
 import type { ChatMessage } from "./types.js";
 
-export function buildSystemPrompt(cwd: string, messages: ChatMessage[]): string {
+export async function buildSystemPrompt(
+  cwd: string,
+  messages: ChatMessage[],
+  options?: { completeText?: TextCompletion },
+): Promise<string> {
   const catalog = getSkillLoader().catalog();
   const memoryStore = MemoryStore.forCwd(cwd);
   const memoryIndex = memoryStore.readIndex();
-  const recalled = loadRecalledMemories(memoryStore, messages);
+  const recalled = await loadRecalledMemories(memoryStore, messages, options);
 
   const sections = [
     `You are a coding agent at ${cwd}. Use tools to solve tasks. Before multi-step work, use todo_write to plan steps and update status as you go. Destructive operations may require user approval. Act, don't explain.`,

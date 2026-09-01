@@ -12,7 +12,7 @@ TypeScript 极简 Agent Harness：Agent Loop + Tool Calling。对照 [learn-clau
   → PreToolUse（permission + [HOOK] log）→ executeTool → PostToolUse
   → PostToolBatch（todo reminder）
   → Stop hook 统计 tool 次数 + memory extract（P6）
-  → 每轮 LLM 前 recall 相关 memory 注入 system
+  → 每轮 LLM 前 LLM catalog 选型 recall（失败则 keyword fallback）注入 system
   → 再调 LLM，直到 assistant 无 tool_calls
   → 打印最终文本
 ```

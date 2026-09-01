@@ -1,6 +1,7 @@
 import type { ChatMessage } from "../runtime/types.js";
 import { createTextCompletion } from "../llm/client.js";
 import { shouldStoreMemory, validateMemoryCandidate } from "./filter.js";
+import { extractJsonArray } from "./json.js";
 import { MemoryStore } from "./store.js";
 import { MEMORY_TYPES } from "./types.js";
 
@@ -35,45 +36,6 @@ function dialogueText(messages: ChatMessage[], maxMessages = 12): string {
     }
   }
   return lines.join("\n").slice(0, 8000);
-}
-
-function extractJsonArray(text: string): unknown[] {
-  const decoder = JSON.parse as (value: string) => unknown;
-  for (let position = 0; position < text.length; position += 1) {
-    if (text[position] !== "[") {
-      continue;
-    }
-    try {
-      const slice = text.slice(position);
-      const end = findArrayEnd(slice);
-      if (end === -1) {
-        continue;
-      }
-      const value = decoder(slice.slice(0, end + 1));
-      if (Array.isArray(value)) {
-        return value;
-      }
-    } catch {
-      continue;
-    }
-  }
-  return [];
-}
-
-function findArrayEnd(text: string): number {
-  let depth = 0;
-  for (let index = 0; index < text.length; index += 1) {
-    const char = text[index];
-    if (char === "[") {
-      depth += 1;
-    } else if (char === "]") {
-      depth -= 1;
-      if (depth === 0) {
-        return index;
-      }
-    }
-  }
-  return -1;
 }
 
 export async function extractMemories(cwd: string, messages: ChatMessage[]): Promise<number> {
