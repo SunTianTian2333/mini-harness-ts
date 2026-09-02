@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import {
   getEnvPath,
+  getMcpServersConfigPath,
   getMemoryDir,
   getMiniHarnessRoot,
   getSessionDbPath,
@@ -23,5 +24,6 @@ describe("mini-harness paths", () => {
     assert.equal(getMemoryDir(cwd), join(cwd, ".mini-harness", "memory"));
     assert.equal(getTranscriptsDir(cwd), join(cwd, ".mini-harness", "transcripts"));
     assert.equal(getToolResultsDir(cwd), join(cwd, ".mini-harness", "tool-results"));
+    assert.equal(getMcpServersConfigPath(cwd), join(cwd, ".mini-harness", "mcp-servers.json"));
   });
 });

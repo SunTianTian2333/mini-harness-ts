@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { buildMcpToolName, isMcpToolName, normalizeMcpName } from "./names.js";
 import { getMcpToolPolicy, hostPolicyFor } from "./policy.js";
-import { assembleToolPool, connectMcp, resetMcpRegistry } from "./registry.js";
+import { assembleToolPool, connectMcp, resetMcpRegistrySync } from "./registry.js";
 
 describe("mcp names", () => {
   it("normalizes unsafe characters", () => {
@@ -20,14 +20,14 @@ describe("mcp names", () => {
 
 describe("mcp registry", () => {
   beforeEach(() => {
-    resetMcpRegistry();
+    resetMcpRegistrySync();
   });
 
-  it("connects mock servers and exposes prefixed tools on next assemble", () => {
+  it("connects mock servers and exposes prefixed tools on next assemble", async () => {
     const before = assembleToolPool();
     assert.equal(before.tools.some((tool) => tool.function.name === "mcp__docs__search"), false);
 
-    const message = connectMcp("docs");
+    const message = await connectMcp("docs");
     assert.match(message, /Connected to MCP server 'docs'/);
 
     const after = assembleToolPool();
@@ -38,7 +38,7 @@ describe("mcp registry", () => {
   });
 
   it("executes allowlisted MCP tools", async () => {
-    connectMcp("docs");
+    await connectMcp("docs");
     const pool = assembleToolPool();
     assert.equal(hostPolicyFor("docs", "search"), "allow");
     assert.equal(getMcpToolPolicy("mcp__docs__search"), "allow");
@@ -47,15 +47,15 @@ describe("mcp registry", () => {
     assert.match(output, /Found 3 results/);
   });
 
-  it("marks unknown MCP tools as confirm policy", () => {
-    connectMcp("deploy");
+  it("marks unknown MCP tools as confirm policy", async () => {
+    await connectMcp("deploy");
     assembleToolPool();
     assert.equal(getMcpToolPolicy("mcp__deploy__trigger"), "confirm");
     assert.equal(getMcpToolPolicy("mcp__deploy__status"), "allow");
   });
 
-  it("rejects duplicate connect", () => {
-    connectMcp("docs");
-    assert.match(connectMcp("docs"), /already connected/);
+  it("rejects duplicate connect", async () => {
+    await connectMcp("docs");
+    assert.match(await connectMcp("docs"), /already connected/);
   });
 });

@@ -1,12 +1,11 @@
 import type { ChatTool } from "../runtime/types.js";
 import { buildMcpToolName, normalizeMcpName } from "./names.js";
-import { hostPolicyFor, resetActiveMcpToolPolicies, setActiveMcpToolPolicies } from "./policy.js";
-import { getMcpClients } from "./state.js";
+import { resetActiveMcpToolPolicies, resolveToolPolicy, setActiveMcpToolPolicies } from "./policy.js";
+import { getMcpConnections, resetMcpConnections } from "./state.js";
 import type { AssembledToolPool, McpToolPolicy } from "./types.js";
 import { BUILTIN_TOOL_SCHEMAS } from "../tools/schemas.js";
 import { executeBuiltinTool } from "../tools/builtin.js";
-import { connectMcp } from "./connect.js";
-import { resetMcpClients } from "./state.js";
+import { connectMcp, getMcpWorkspaceCwd, shutdownMcpConnections } from "./connect.js";
 
 function assertObjectSchema(schema: unknown, origin: string): Record<string, unknown> {
   if (!schema || typeof schema !== "object" || Array.isArray(schema)) {
@@ -19,8 +18,14 @@ function assertObjectSchema(schema: unknown, origin: string): Record<string, unk
   return record;
 }
 
-export function resetMcpRegistry(): void {
-  resetMcpClients();
+export async function resetMcpRegistry(): Promise<void> {
+  await shutdownMcpConnections();
+  resetActiveMcpToolPolicies();
+}
+
+/** @deprecated Use resetMcpRegistry() */
+export function resetMcpRegistrySync(): void {
+  resetMcpConnections();
   resetActiveMcpToolPolicies();
 }
 
@@ -46,16 +51,16 @@ export function assembleToolPool(): AssembledToolPool {
         if (typeof name !== "string" || name.trim().length === 0) {
           return "Error: connect_mcp requires name";
         }
-        return connectMcp(name.trim());
+        return connectMcp(name.trim(), getMcpWorkspaceCwd());
       });
       continue;
     }
     executors.set(toolName, (args, cwd) => executeBuiltinTool(toolName, args, cwd));
   }
 
-  for (const [serverName, server] of getMcpClients()) {
+  for (const [serverName, connection] of getMcpConnections()) {
     const safeServer = normalizeMcpName(serverName);
-    for (const toolDef of server.tools) {
+    for (const toolDef of connection.listTools()) {
       const rawName = toolDef.name;
       const safeTool = normalizeMcpName(rawName);
       const prefixed = buildMcpToolName(safeServer, safeTool);
@@ -69,7 +74,7 @@ export function assembleToolPool(): AssembledToolPool {
 
       const schema = assertObjectSchema(toolDef.inputSchema, origin);
       origins.set(prefixed, origin);
-      policies.set(prefixed, hostPolicyFor(serverName, rawName));
+      policies.set(prefixed, resolveToolPolicy(serverName, rawName, connection.toolPolicies));
 
       tools.push({
         type: "function",
@@ -80,7 +85,7 @@ export function assembleToolPool(): AssembledToolPool {
         },
       });
 
-      executors.set(prefixed, async (args) => server.callTool(rawName, args));
+      executors.set(prefixed, async (args) => connection.callTool(rawName, args));
     }
   }
 
@@ -98,5 +103,12 @@ export function assembleToolPool(): AssembledToolPool {
   };
 }
 
-export { connectMcp, listConnectedMcpServers } from "./connect.js";
+export {
+  autoConnectConfiguredMcpServers,
+  connectMcp,
+  listConnectedMcpServers,
+  listAvailableMcpServerNames,
+  setMcpWorkspaceCwd,
+} from "./connect.js";
+export { loadMcpServersConfig } from "./config.js";
 export { listMockMcpServerNames } from "./mock-servers.js";

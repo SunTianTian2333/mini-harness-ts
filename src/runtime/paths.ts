@@ -36,3 +36,7 @@ export function getTranscriptsDir(cwd: string): string {
 export function getToolResultsDir(cwd: string): string {
   return join(getMiniHarnessRoot(cwd), "tool-results");
 }
+
+export function getMcpServersConfigPath(cwd: string): string {
+  return join(getMiniHarnessRoot(cwd), "mcp-servers.json");
+}

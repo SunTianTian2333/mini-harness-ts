@@ -73,7 +73,8 @@ Harness 层逻辑：传 `messages` + `tools` → 收 `tool_calls` → 本地执�
     ├── MEMORY.md     # 索引
     └── *.md          # 单条记忆
 ├── tool-results/     # 大 tool 输出落盘（P7）
-└── transcripts/      # snip / compact 归档（P7）
+├── transcripts/      # snip / compact 归档（P7）
+└── mcp-servers.json  # MCP server 配置（P10b-1，可选）
 ```
 
 ## 运行
@@ -86,8 +87,52 @@ npm install
 npm run dev    # 新 session，写入 .mini-harness/sessions.db
 npm run dev -- --resume <session_id>
 npm run dev -- --list-sessions
+npm run dev -- --strict-mcp   # autoConnect 失败时退出（默认仅警告）
 npm test
 ```
+
+## MCP 配置（P10b）
+
+在 `.mini-harness/mcp-servers.json` 声明 MCP server；`autoConnect` 会在 CLI 启动时自动连接（无需模型先调 `connect_mcp`）。
+
+```json
+{
+  "servers": {
+    "docs": { "transport": "mock" },
+    "music": {
+      "transport": "stdio",
+      "command": "python",
+      "args": ["-m", "music_mcp"],
+      "policy": {
+        "validate_composition": "allow",
+        "create_midi": "allow",
+        "render_audio": "allow"
+      }
+    }
+  },
+  "autoConnect": ["music"]
+}
+```
+
+| 字段 | 说明 |
+|------|------|
+| `transport: "mock"` | 内置 mock（`docs` / `deploy`） |
+| `transport: "stdio"` | spawn 子进程，经 `@modelcontextprotocol/client` 通信 |
+| `command` / `args` | stdio server 启动命令 |
+| `cwd` / `env` | 可选；默认 cwd 为工作区根 |
+| `policy` | 按 MCP 原始 tool 名覆盖 allow/confirm |
+| `autoConnect` | 启动时自动 `connectMcp` 的 server 别名列表 |
+
+启动成功时会打印 `Connected MCP servers: ...`。某 server 连接失败时默认打 `[mcp] autoConnect ... failed` 警告并继续；加 `--strict-mcp` 则任一失败即退出。
+
+### Troubleshooting
+
+| 现象 | 处理 |
+|------|------|
+| `failed to connect ... ENOENT` | 检查 `command` 是否在 PATH 中，或写绝对路径 |
+| `Connection closed` | server 进程启动即退出；看 stderr（server 日志必须走 stderr，不能污染 stdout） |
+| `Unknown server` in autoConnect | 确认 `autoConnect` 名与 `servers` 键一致，mock 名需在 `docs`/`deploy` 中 |
+| invalid JSON in config | 降级为空配置；修正 `.mini-harness/mcp-servers.json` |
 
 试例（P6）：
 
@@ -127,7 +172,10 @@ npm test
 |--------|-------|------|------|------|
 | 1 | P8 | Task System | s10 | `.tasks/` 持久任务图；create/update/list/get/claim/complete |
 | 2 | P9 | Background bash | s11 | bash `run_in_background`；占位 result + 完成后 notification |
-| 3 | P10 | MCP + 动态 tool pool | s14 | `connect_mcp` + `assemble_tool_pool()`；`mcp__server__tool` | ✅ |
+| 3 | P10 | MCP + 动态 tool pool | s14 | `connect_mcp` + `assembleToolPool()` | ✅ |
+| 3b | P10b-1 | MCP 抽象层 + config | s14 | `McpConnection` + `mcp-servers.json` | ✅ |
+| 3c | P10b-2 | 真实 stdio MCP Client | s14 | `@modelcontextprotocol/client` | ✅ |
+| 3d | P10b-3 | autoConnect + 文档 | s14 | 启动自动连 MCP + troubleshooting | ✅ |
 | 4 | P11 | 多事件源自动 turn | s15 集成 | 除用户输入外，background/cron 等队列唤醒 `runLoop` |
 
 **依赖提示：** P11 至少依赖 P9（后台完成通知）；若后续加 Cron，也经 P11 注入。P8 与 P9/P10 可并行规划，互不阻塞。

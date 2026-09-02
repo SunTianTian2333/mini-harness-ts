@@ -18,6 +18,18 @@ export function hostPolicyFor(serverName: string, toolName: string): McpToolPoli
   return MCP_HOST_POLICY[policyKey(serverName, toolName)] ?? "confirm";
 }
 
+export function resolveToolPolicy(
+  serverName: string,
+  toolName: string,
+  configured?: ReadonlyMap<string, McpToolPolicy>,
+): McpToolPolicy {
+  const fromConfig = configured?.get(toolName);
+  if (fromConfig) {
+    return fromConfig;
+  }
+  return hostPolicyFor(serverName, toolName);
+}
+
 export function setActiveMcpToolPolicies(policies: Map<string, McpToolPolicy>): void {
   activePolicies = new Map(policies);
 }

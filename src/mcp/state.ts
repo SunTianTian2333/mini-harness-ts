@@ -1,23 +1,23 @@
-import type { MCPClient } from "./client.js";
+import type { McpConnection } from "./connection.js";
 
-const clients = new Map<string, MCPClient>();
+const connections = new Map<string, McpConnection>();
 
-export function getMcpClients(): Map<string, MCPClient> {
-  return clients;
+export function getMcpConnections(): Map<string, McpConnection> {
+  return connections;
 }
 
-export function setMcpClient(name: string, client: MCPClient): void {
-  clients.set(name, client);
+export function setMcpConnection(name: string, connection: McpConnection): void {
+  connections.set(name, connection);
 }
 
-export function hasMcpClient(name: string): boolean {
-  return clients.has(name);
+export function hasMcpConnection(name: string): boolean {
+  return connections.has(name);
 }
 
-export function listConnectedMcpClientNames(): string[] {
-  return [...clients.keys()].sort();
+export function listConnectedMcpConnectionNames(): string[] {
+  return [...connections.keys()].sort();
 }
 
-export function resetMcpClients(): void {
-  clients.clear();
+export function resetMcpConnections(): void {
+  connections.clear();
 }
