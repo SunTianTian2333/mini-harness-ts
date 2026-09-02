@@ -1,6 +1,4 @@
-import * as readline from "node:readline/promises";
-import { stdin as input, stdout as output } from "node:process";
-
+import { promptUser } from "../runtime/prompt-io.js";
 import { safePath } from "../tools/file.js";
 import { getMcpToolPolicy } from "../mcp/policy.js";
 import { isMcpToolName } from "../mcp/names.js";
@@ -10,6 +8,8 @@ const DENY_LIST = ["rm -rf /", "sudo", "shutdown", "reboot", "mkfs", "dd if=", "
 
 const DESTRUCTIVE_COMMAND = /(?:^|[;&|()\n])\s*(?:rm|del)(?=\s|$|[;&|()])/i;
 
+const RECURSIVE_RM = /\brm\s+(?:[^\s;|&]*\s+)*-(?:[^\s]*r|r[^\s]*)/i;
+
 function pathEscapesWorkspace(relativePath: string, workdir: string): boolean {
   try {
     safePath(relativePath, workdir);
@@ -17,6 +17,37 @@ function pathEscapesWorkspace(relativePath: string, workdir: string): boolean {
   } catch {
     return true;
   }
+}
+
+function rmTargets(command: string): string[] {
+  const segments = command.split(/(?:&&|\|\||[;&|])/);
+  for (const segment of segments) {
+    const match = segment.match(/\brm(?:\s+-[^\s]+)*\s+(.+)/i);
+    if (!match?.[1]) {
+      continue;
+    }
+    const targets = match[1]
+      .trim()
+      .split(/\s+/)
+      .filter((part) => part.length > 0 && !part.startsWith("-"));
+    if (targets.length > 0) {
+      return targets;
+    }
+  }
+  return [];
+}
+
+function isBenignWorkspaceRm(command: string, workdir: string): boolean {
+  if (!/\brm\b/i.test(command) || RECURSIVE_RM.test(command)) {
+    return false;
+  }
+
+  const targets = rmTargets(command);
+  if (targets.length === 0) {
+    return false;
+  }
+
+  return targets.every((target) => !pathEscapesWorkspace(target, workdir));
 }
 
 function containsDestructiveCommand(command: string): boolean {
@@ -47,7 +78,7 @@ function checkRules(toolName: string, args: Record<string, unknown>, workdir: st
 
   if (toolName === "bash") {
     const command = typeof args.command === "string" ? args.command : "";
-    if (containsDestructiveCommand(command)) {
+    if (containsDestructiveCommand(command) && !isBenignWorkspaceRm(command, workdir)) {
       return "Potentially destructive command";
     }
   }
@@ -58,13 +89,8 @@ function checkRules(toolName: string, args: Record<string, unknown>, workdir: st
 async function askUser(toolName: string, args: Record<string, unknown>, reason: string): Promise<boolean> {
   process.stdout.write(`\n\x1b[33m[permission] ${reason}\x1b[0m\n`);
   process.stdout.write(`   Tool: ${toolName}(${JSON.stringify(args)})\n`);
-  const rl = readline.createInterface({ input, output });
-  try {
-    const choice = (await rl.question("   Allow? [y/N] ")).trim().toLowerCase();
-    return choice === "y" || choice === "yes";
-  } finally {
-    rl.close();
-  }
+  const choice = (await promptUser("   Allow? [y/N] ", reason)).trim().toLowerCase();
+  return choice === "y" || choice === "yes";
 }
 
 export function createPermissionHook(workdir: string) {
@@ -100,4 +126,10 @@ export function createPermissionHook(workdir: string) {
   };
 }
 
-export { checkDenyList, checkRules, containsDestructiveCommand, pathEscapesWorkspace };
+export {
+  checkDenyList,
+  checkRules,
+  containsDestructiveCommand,
+  isBenignWorkspaceRm,
+  pathEscapesWorkspace,
+};

@@ -6,4 +6,4 @@ export type ChatMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam;
 /** OpenAI tool 定义 */
 export type ChatTool = OpenAI.Chat.Completions.ChatCompletionTool;
 
-export const MAX_TURNS = 10;
+export const MAX_TURNS = 100;

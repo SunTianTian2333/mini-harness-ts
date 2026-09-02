@@ -133,6 +133,8 @@ npm test
 | `Connection closed` | server 进程启动即退出；看 stderr（server 日志必须走 stderr，不能污染 stdout） |
 | `Unknown server` in autoConnect | 确认 `autoConnect` 名与 `servers` 键一致，mock 名需在 `docs`/`deploy` 中 |
 | invalid JSON in config | 降级为空配置；修正 `.mini-harness/mcp-servers.json` |
+| 输入后无反应 / 无 `[HOOK] UserPromptSubmit` | 若刚出现过 `[permission] Allow? [y/N]`，先回答 y/n；仍异常则 Ctrl+C 重启（旧版双 readline bug 已修） |
+| `[permission]` 等待很久 | Agent 在等确认，不是卡死；工作区内 `rm piano_output/...` 现已自动放行 |
 
 试例（P6）：
 

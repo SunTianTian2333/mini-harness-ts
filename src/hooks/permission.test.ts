@@ -6,8 +6,10 @@ import {
   checkRules,
   containsDestructiveCommand,
   createPermissionHook,
+  isBenignWorkspaceRm,
   pathEscapesWorkspace,
 } from "./permission.js";
+import { clearPromptFn, setPromptFn } from "../runtime/prompt-io.js";
 
 describe("permission helpers", () => {
   const workdir = "/tmp/work";
@@ -32,10 +34,20 @@ describe("permission helpers", () => {
     assert.equal(checkRules("bash", { command: "rm -rf ./data" }, workdir), "Potentially destructive command");
     assert.equal(checkRules("glob", { pattern: "**/*.ts" }, workdir), null);
   });
+
+  it("allows benign workspace rm without confirmation", () => {
+    const command =
+      "cd /tmp/work && rm piano_output/sky_lullaby.mid piano_output/sky_lullaby.wav && ls -la piano_output/";
+    assert.equal(isBenignWorkspaceRm(command, workdir), true);
+    assert.equal(checkRules("bash", { command }, workdir), null);
+  });
 });
 
 describe("createPermissionHook", () => {
   it("hard-blocks deny list without prompting", async () => {
+    setPromptFn(async () => {
+      throw new Error("should not prompt");
+    });
     const hook = createPermissionHook("/tmp/work");
     const result = await hook({
       id: "1",
@@ -43,9 +55,13 @@ describe("createPermissionHook", () => {
       input: { command: "sudo ls" },
     });
     assert.equal(result, "Permission denied.");
+    clearPromptFn();
   });
 
   it("allows safe bash commands", async () => {
+    setPromptFn(async () => {
+      throw new Error("should not prompt");
+    });
     const hook = createPermissionHook("/tmp/work");
     const result = await hook({
       id: "1",
@@ -53,5 +69,6 @@ describe("createPermissionHook", () => {
       input: { command: "echo ok" },
     });
     assert.equal(result, null);
+    clearPromptFn();
   });
 });

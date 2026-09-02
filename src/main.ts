@@ -26,6 +26,10 @@ import { SessionDatabase } from "./session/sqlite.js";
 import { createNewSessionStore, resumeSessionStore, type SessionStore } from "./session/store.js";
 import { initSkillLoader } from "./skill/loader.js";
 import type { ChatMessage } from "./runtime/types.js";
+import {
+  clearPromptFn,
+  setPromptFn,
+} from "./runtime/prompt-io.js";
 
 function parseCliArgs(argv: string[]): {
   resumeId?: string;
@@ -133,6 +137,7 @@ async function main(): Promise<void> {
     console.log("Enter a task, or q to quit.\n");
 
     const rl = readline.createInterface({ input, output });
+    setPromptFn((label) => rl.question(label));
 
     try {
       while (true) {
@@ -148,6 +153,7 @@ async function main(): Promise<void> {
       }
     } finally {
       rl.close();
+      clearPromptFn();
       endSession("quit");
     }
   } finally {
