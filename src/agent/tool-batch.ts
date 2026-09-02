@@ -5,7 +5,7 @@ import {
 } from "../hooks/registry.js";
 import type { ToolCallBlock } from "../hooks/types.js";
 import { TodoReminderTracker } from "../todo/reminder.js";
-import { executeTool } from "../tools/index.js";
+import type { AssembledToolPool } from "../mcp/types.js";
 import type { ChatCompletionMessageToolCall } from "openai/resources/chat/completions";
 
 function parseToolArgs(raw: string): Record<string, unknown> | null {
@@ -33,6 +33,7 @@ export async function runToolBatch(
   toolCalls: ChatCompletionMessageToolCall[],
   cwd: string,
   todoReminder: TodoReminderTracker,
+  executeTool: AssembledToolPool["execute"],
 ): Promise<{ results: Array<{ id: string; content: string }>; compactRequested: boolean }> {
   let usedTodo = false;
   let compactRequested = false;

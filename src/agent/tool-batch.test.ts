@@ -8,6 +8,7 @@ import { SessionDatabase } from "../session/sqlite.js";
 import { createNewSessionStore } from "../session/store.js";
 import type { SessionEventType } from "../session/types.js";
 import { TodoReminderTracker } from "../todo/reminder.js";
+import { assembleToolPool } from "../mcp/registry.js";
 import { runToolBatch } from "./tool-batch.js";
 import type { ChatCompletionMessageToolCall } from "openai/resources/chat/completions";
 
@@ -44,7 +45,8 @@ describe("runToolBatch", () => {
       },
     ];
 
-    const { results } = await runToolBatch(toolCalls, WORKDIR, new TodoReminderTracker());
+    const pool = assembleToolPool();
+    const { results } = await runToolBatch(toolCalls, WORKDIR, new TodoReminderTracker(), pool.execute);
 
     assert.match(results[0]?.content ?? "", /invalid tool arguments JSON/);
 
@@ -72,7 +74,8 @@ describe("runToolBatch", () => {
       },
     ];
 
-    const { results } = await runToolBatch(toolCalls, WORKDIR, new TodoReminderTracker());
+    const pool = assembleToolPool();
+    const { results } = await runToolBatch(toolCalls, WORKDIR, new TodoReminderTracker(), pool.execute);
 
     assert.equal(results[0]?.content, "Permission denied.");
 
@@ -90,6 +93,7 @@ describe("runToolBatch", () => {
   it("does not log tool/start or tool/result when permission blocks before execution", async () => {
     const { db, sessionId } = createSessionHarness();
 
+    const pool = assembleToolPool();
     await runToolBatch(
       [
         {
@@ -103,6 +107,7 @@ describe("runToolBatch", () => {
       ],
       WORKDIR,
       new TodoReminderTracker(),
+      pool.execute,
     );
 
     assert.equal(countEvents(db, sessionId, "tool/denied"), 1);

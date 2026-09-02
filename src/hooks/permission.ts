@@ -2,6 +2,8 @@ import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 
 import { safePath } from "../tools/file.js";
+import { getMcpToolPolicy } from "../mcp/policy.js";
+import { isMcpToolName } from "../mcp/names.js";
 import type { ToolCallBlock } from "./types.js";
 
 const DENY_LIST = ["rm -rf /", "sudo", "shutdown", "reboot", "mkfs", "dd if=", "> /dev/sda"];
@@ -81,6 +83,16 @@ export function createPermissionHook(workdir: string) {
       const allowed = await askUser(block.name, block.input, ruleReason);
       if (!allowed) {
         return "Permission denied.";
+      }
+    }
+
+    if (isMcpToolName(block.name)) {
+      const policy = getMcpToolPolicy(block.name);
+      if (policy !== "allow") {
+        const allowed = await askUser(block.name, block.input, "External MCP tool");
+        if (!allowed) {
+          return "Permission denied.";
+        }
       }
     }
 

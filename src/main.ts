@@ -98,7 +98,7 @@ async function main(): Promise<void> {
     process.exit(0);
   });
 
-  console.log("mini-harness-ts · Phase 7: Context Compact");
+  console.log("mini-harness-ts · Phase 10: MCP");
   console.log(`Workspace: ${cwd}`);
   console.log(`Workspace store: ${getMiniHarnessRoot(cwd)}`);
   console.log(`Model: ${model}`);

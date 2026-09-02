@@ -7,7 +7,7 @@ import { buildSystemPrompt } from "../runtime/prompt.js";
 import type { ChatMessage } from "../runtime/types.js";
 import { MAX_TURNS } from "../runtime/types.js";
 import { TodoReminderTracker } from "../todo/reminder.js";
-import { TOOL_SCHEMAS } from "../tools/index.js";
+import { assembleToolPool } from "../tools/index.js";
 import { runToolBatch } from "./tool-batch.js";
 
 function latestUserRequest(messages: ChatMessage[], fallback: string): string {
@@ -34,11 +34,12 @@ export async function runLoop(
     const request = latestUserRequest(messages, activeRequest);
     await prepareContext(messages, cwd, request);
     const system = await buildSystemPrompt(cwd, messages);
+    const toolPool = assembleToolPool();
 
     let msg;
     let finishReason;
     try {
-      ({ message: msg, finishReason } = await createAssistantTurn(system, messages, TOOL_SCHEMAS));
+      ({ message: msg, finishReason } = await createAssistantTurn(system, messages, toolPool.tools));
       reactiveRetries = 0;
     } catch (error) {
       if (isContextLengthError(error) && reactiveRetries < MAX_REACTIVE_RETRIES) {
@@ -73,7 +74,12 @@ export async function runLoop(
       return msg.content ?? "(empty response)";
     }
 
-    const { results: toolResults, compactRequested } = await runToolBatch(msg.tool_calls, cwd, todoReminder);
+    const { results: toolResults, compactRequested } = await runToolBatch(
+      msg.tool_calls,
+      cwd,
+      todoReminder,
+      toolPool.execute,
+    );
     for (const result of toolResults) {
       messages.push({ role: "tool", tool_call_id: result.id, content: result.content });
     }

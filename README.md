@@ -41,7 +41,8 @@ TypeScript 极简 Agent Harness：Agent Loop + Tool Calling。对照 [learn-clau
 | `src/runtime/prompt.ts` | system prompt：skill catalog + memory recall（P6）+ compact 规则（P7） |
 | `src/memory/` | Memory store / recall / extract / consolidate（P6） |
 | `src/compact/` | Context compact：budget / snip / micro / fit / summarize（P7） |
-| `src/tools/compact.ts` | compact 工具：模型主动请求摘要（P7） |
+| `src/mcp/` | MCP client、mock servers、动态 tool pool（P10） |
+| `src/tools/connect-mcp.ts` | connect_mcp 工具（P10） |
 | `src/runtime/types.ts` | 类型与常量 |
 
 ## 模型 SDK
@@ -120,6 +121,19 @@ npm test
 | P6 | Memory recall + extract + consolidate | ✅ |
 | P7 | Context Compact（s08 对齐） | ✅ |
 
+## 待实现清单
+
+| 优先级 | Phase | 机制 | 参考 | 说明 |
+|--------|-------|------|------|------|
+| 1 | P8 | Task System | s10 | `.tasks/` 持久任务图；create/update/list/get/claim/complete |
+| 2 | P9 | Background bash | s11 | bash `run_in_background`；占位 result + 完成后 notification |
+| 3 | P10 | MCP + 动态 tool pool | s14 | `connect_mcp` + `assemble_tool_pool()`；`mcp__server__tool` | ✅ |
+| 4 | P11 | 多事件源自动 turn | s15 集成 | 除用户输入外，background/cron 等队列唤醒 `runLoop` |
+
+**依赖提示：** P11 至少依赖 P9（后台完成通知）；若后续加 Cron，也经 P11 注入。P8 与 P9/P10 可并行规划，互不阻塞。
+
+**暂未列入：** Subagent（s06）、Cron（s12）、Agent Teams（s13）、Error recovery 全量、Worktree、ConsoleBroker。
+
 ## 概念覆盖（求职 / 口头讲解）
 
 | 概念 | 本项目 | learn-claude-code |
@@ -131,7 +145,7 @@ npm test
 | Todo / Reminder | ✅ `todo/` + PostToolBatch | s05 |
 | Skill Loading | ✅ `skill/` + load_skill | s07 |
 | Session 持久化 | ✅ `session/` + SQLite | —（对照 dsh L2） |
-| Memory / MCP | ✅ memory（P6）；MCP ❌ | s09 / s14 |
+| Memory / MCP | ✅ memory（P6）；✅ MCP mock（P10） | s09 / s14 |
 | Context Compact | ✅ compact/（P7） | s08 |
 
 Spec：`docs/mini-harness-ts/` · SDD 约束：[`AGENTS.md`](../../AGENTS.md) §mini-harness-ts
