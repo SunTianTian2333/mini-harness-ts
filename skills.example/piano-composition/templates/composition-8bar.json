@@ -1,0 +1,43 @@
+{
+  "title": "Gentle Walk",
+  "metadata": {
+    "tempo": 72,
+    "key": "C major",
+    "time_signature": "4/4",
+    "mood": "calm, gentle",
+    "target_duration_seconds": 27
+  },
+  "structure": [
+    { "section": "A", "bars": [1, 2, 3, 4] },
+    { "section": "B", "bars": [5, 6, 7, 8] }
+  ],
+  "chords": [
+    { "bar": 1, "chord": "C" },
+    { "bar": 2, "chord": "G" },
+    { "bar": 3, "chord": "Am" },
+    { "bar": 4, "chord": "F" },
+    { "bar": 5, "chord": "Dm" },
+    { "bar": 6, "chord": "G" },
+    { "bar": 7, "chord": "C" },
+    { "bar": 8, "chord": "G" }
+  ],
+  "accompaniment": { "pattern": "arpeggio" },
+  "notes": [
+    {
+      "hand": "right",
+      "bar": 1,
+      "beat": 1,
+      "pitch": "E4",
+      "duration": 1,
+      "velocity": 64
+    },
+    {
+      "hand": "right",
+      "bar": 1,
+      "beat": 2.5,
+      "pitch": "G4",
+      "duration": 0.5,
+      "velocity": 62
+    }
+  ]
+}

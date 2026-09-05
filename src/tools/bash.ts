@@ -14,8 +14,13 @@ export const BASH_TOOL: ChatTool = {
       type: "object",
       properties: {
         command: { type: "string", description: "Shell command to execute" },
+        run_in_background: {
+          type: "boolean",
+          description: "Run the command in the background without blocking the agent loop.",
+        },
       },
       required: ["command"],
+      additionalProperties: false,
     },
   },
 };

@@ -1,3 +1,4 @@
+import { injectBackgroundResults } from "../background/inject.js";
 import { triggerHooks, triggerSideEffectHooks } from "../hooks/registry.js";
 import { createAssistantTurn } from "../llm/client.js";
 import { prepareContext } from "../compact/compactor.js";
@@ -30,6 +31,7 @@ export async function runLoop(
 
   for (let turn = 0; turn < MAX_TURNS; turn += 1) {
     await triggerSideEffectHooks("TurnStart", turn);
+    injectBackgroundResults(messages);
 
     const request = latestUserRequest(messages, activeRequest);
     await prepareContext(messages, cwd, request);

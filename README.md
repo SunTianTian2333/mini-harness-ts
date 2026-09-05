@@ -77,6 +77,12 @@ Harness 层逻辑：传 `messages` + `tools` → 收 `tool_calls` → 本地执�
 └── mcp-servers.json  # MCP server 配置（P10b-1，可选）
 ```
 
+**示例 Skill（进 git）：** `skills.example/piano-composition/`。复制到运行时目录后重启 CLI：
+
+```bash
+cp -r skills.example/piano-composition .mini-harness/skills/
+```
+
 ## 运行
 
 ```bash
@@ -167,22 +173,26 @@ npm test
 | P5c | `.mini-harness/` 工作区布局 | ✅ |
 | P6 | Memory recall + extract + consolidate | ✅ |
 | P7 | Context Compact（s08 对齐） | ✅ |
+| P8 | Task System（s10 对齐） | ✅ |
+| P9 | Background bash（s11 对齐） | ✅ |
+| P10 | MCP + 动态 tool pool（stdio + autoConnect） | ✅ |
 
 ## 待实现清单
 
-| 优先级 | Phase | 机制 | 参考 | 说明 |
-|--------|-------|------|------|------|
-| 1 | P8 | Task System | s10 | `.tasks/` 持久任务图；create/update/list/get/claim/complete |
-| 2 | P9 | Background bash | s11 | bash `run_in_background`；占位 result + 完成后 notification |
-| 3 | P10 | MCP + 动态 tool pool | s14 | `connect_mcp` + `assembleToolPool()` | ✅ |
-| 3b | P10b-1 | MCP 抽象层 + config | s14 | `McpConnection` + `mcp-servers.json` | ✅ |
-| 3c | P10b-2 | 真实 stdio MCP Client | s14 | `@modelcontextprotocol/client` | ✅ |
-| 3d | P10b-3 | autoConnect + 文档 | s14 | 启动自动连 MCP + troubleshooting | ✅ |
-| 4 | P11 | 多事件源自动 turn | s15 集成 | 除用户输入外，background/cron 等队列唤醒 `runLoop` |
+> **各模块作用、依赖与推荐顺序：** [`../../docs/mini-harness-ts/待实现路线图.md`](../../docs/mini-harness-ts/待实现路线图.md)
 
-**依赖提示：** P11 至少依赖 P9（后台完成通知）；若后续加 Cron，也经 P11 注入。P8 与 P9/P10 可并行规划，互不阻塞。
+| 优先级 | Phase / 章 | 机制 | 状态 |
+|--------|------------|------|------|
+| 1 | **P11** · s15 | 多事件源 turn：background/cron 唤醒 loop | ⭐ **推荐下一项** |
+| 2 | s06 | Subagent：`task` 工具、独立 messages 委派 | 简历 ROI 高 |
+| 3 | s17 | Goal Loop：Stop 时独立 evaluator | 未排 Phase |
+| 4 | s12 | Cron：定时 prompt 入队 | 未排 Phase |
+| 5 | s16 | Workflow：固定编排 + journal 续跑 | 未排 Phase |
+| 6 | s13 | Agent Teams：Lead/Teammate + Task 板 | 未排 Phase |
 
-**暂未列入：** Subagent（s06）、Cron（s12）、Agent Teams（s13）、Error recovery 全量、Worktree、ConsoleBroker。
+**依赖：** P11 至少依赖 P9；s13 强依赖 P8；s12 有意义需 P11。
+
+**暂未列入：** Error recovery 全量、Worktree、ConsoleBroker（见路线图 §5）。
 
 ## 概念覆盖（求职 / 口头讲解）
 
@@ -193,6 +203,8 @@ npm test
 | Permission | ✅ `hooks/permission.ts` | s03 → s04 Hook |
 | Hook 扩展 | ✅ `hooks/registry.ts` | s04 |
 | Todo / Reminder | ✅ `todo/` + PostToolBatch | s05 |
+| Task System | ✅ `task/` + 6 tools | s10 |
+| Background bash | ✅ `background/` + run_in_background | s11 |
 | Skill Loading | ✅ `skill/` + load_skill | s07 |
 | Session 持久化 | ✅ `session/` + SQLite | —（对照 dsh L2） |
 | Memory / MCP | ✅ memory（P6）；✅ MCP mock（P10） | s09 / s14 |

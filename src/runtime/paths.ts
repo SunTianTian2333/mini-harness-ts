@@ -29,6 +29,10 @@ export function getMemoryDir(cwd: string): string {
   return join(getMiniHarnessRoot(cwd), "memory");
 }
 
+export function getTasksDir(cwd: string): string {
+  return join(getMiniHarnessRoot(cwd), "tasks");
+}
+
 export function getTranscriptsDir(cwd: string): string {
   return join(getMiniHarnessRoot(cwd), "transcripts");
 }

@@ -1,0 +1,38 @@
+{
+  "title": "Short Demo",
+  "metadata": {
+    "tempo": 72,
+    "key": "A minor",
+    "time_signature": "4/4",
+    "mood": "calm",
+    "target_duration_seconds": 13
+  },
+  "structure": [
+    { "section": "A", "bars": [1, 2, 3, 4] }
+  ],
+  "chords": [
+    { "bar": 1, "chord": "Am" },
+    { "bar": 2, "chord": "F" },
+    { "bar": 3, "chord": "C" },
+    { "bar": 4, "chord": "G" }
+  ],
+  "accompaniment": { "pattern": "arpeggio" },
+  "notes": [
+    {
+      "hand": "right",
+      "bar": 1,
+      "beat": 1,
+      "pitch": "A4",
+      "duration": 1,
+      "velocity": 68
+    },
+    {
+      "hand": "right",
+      "bar": 1,
+      "beat": 2,
+      "pitch": "C5",
+      "duration": 1,
+      "velocity": 64
+    }
+  ]
+}

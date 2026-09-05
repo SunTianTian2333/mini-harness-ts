@@ -3,6 +3,7 @@ import { stdin as input, stdout as output } from "node:process";
 import { config as loadEnv } from "dotenv";
 
 import { runLoop } from "./agent/loop.js";
+import { shutdownBackgroundTasks } from "./background/manager.js";
 import {
   autoConnectConfiguredMcpServers,
   listConnectedMcpServers,
@@ -113,6 +114,7 @@ async function main(): Promise<void> {
     setupDefaultHooks(cwd, sessionStore);
 
     process.on("SIGINT", () => {
+      shutdownBackgroundTasks();
       endSession("sigint");
       void shutdownMcpConnections()
         .finally(() => {
@@ -154,9 +156,11 @@ async function main(): Promise<void> {
     } finally {
       rl.close();
       clearPromptFn();
+      shutdownBackgroundTasks();
       endSession("quit");
     }
   } finally {
+    shutdownBackgroundTasks();
     await shutdownMcpConnections();
     db?.close();
   }

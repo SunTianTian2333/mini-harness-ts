@@ -7,6 +7,11 @@ import type { ToolCallBlock } from "../hooks/types.js";
 import { TodoReminderTracker } from "../todo/reminder.js";
 import type { AssembledToolPool } from "../mcp/types.js";
 import type { ChatCompletionMessageToolCall } from "openai/resources/chat/completions";
+import {
+  formatBackgroundPlaceholder,
+  getBackgroundManager,
+  shouldRunBackground,
+} from "../background/manager.js";
 
 function parseToolArgs(raw: string): Record<string, unknown> | null {
   try {
@@ -72,7 +77,23 @@ export async function runToolBatch(
       continue;
     }
 
-    const output = await executeTool(block.name, block.input, cwd);
+    let output: string;
+    if (shouldRunBackground(block.name, block.input)) {
+      const command = block.input.command;
+      if (typeof command !== "string" || command.trim().length === 0) {
+        output = "Error: bash requires a non-empty command string";
+      } else {
+        try {
+          const taskId = getBackgroundManager().start(command, cwd, block.id);
+          output = formatBackgroundPlaceholder(taskId);
+        } catch (error) {
+          output = `Error: ${error instanceof Error ? error.message : String(error)}`;
+        }
+      }
+    } else {
+      output = await executeTool(block.name, block.input, cwd);
+    }
+
     process.stdout.write(`${output.slice(0, 200)}${output.length > 200 ? "…" : ""}\n`);
     await triggerSideEffectHooks("PostToolUse", block, output);
     toolResults.push({ id: block.id, content: output });

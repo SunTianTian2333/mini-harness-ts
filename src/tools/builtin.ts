@@ -3,6 +3,14 @@ import { runRead, runWrite, runEdit, runGlob } from "./file.js";
 import { runTodoWrite } from "./todo.js";
 import { runLoadSkill } from "./skill.js";
 import { runCompact } from "./compact.js";
+import {
+  runClaimTask,
+  runCompleteTask,
+  runCreateTask,
+  runGetTask,
+  runListTasks,
+  runUpdateTask,
+} from "./task.js";
 
 export async function executeBuiltinTool(
   name: string,
@@ -66,6 +74,24 @@ export async function executeBuiltinTool(
     }
     case "compact": {
       return runCompact();
+    }
+    case "create_task": {
+      return runCreateTask(cwd, args.subject, args.description);
+    }
+    case "update_task": {
+      return runUpdateTask(cwd, args.task_id, args.addBlockedBy);
+    }
+    case "list_tasks": {
+      return runListTasks(cwd);
+    }
+    case "get_task": {
+      return runGetTask(cwd, args.task_id);
+    }
+    case "claim_task": {
+      return runClaimTask(cwd, args.task_id);
+    }
+    case "complete_task": {
+      return runCompleteTask(cwd, args.task_id);
     }
     default:
       return `Error: Unknown tool "${name}"`;

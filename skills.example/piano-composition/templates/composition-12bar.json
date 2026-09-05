@@ -1,0 +1,49 @@
+{
+  "title": "Evening Piece",
+  "metadata": {
+    "tempo": 72,
+    "key": "C major",
+    "time_signature": "4/4",
+    "mood": "dreamy, peaceful",
+    "target_duration_seconds": 40
+  },
+  "structure": [
+    { "section": "Intro", "bars": [1, 2] },
+    { "section": "A", "bars": [3, 4, 5, 6] },
+    { "section": "B", "bars": [7, 8] },
+    { "section": "A_prime", "bars": [9, 10, 11, 12] }
+  ],
+  "chords": [
+    { "bar": 1, "chord": "C" },
+    { "bar": 2, "chord": "G" },
+    { "bar": 3, "chord": "C" },
+    { "bar": 4, "chord": "Am" },
+    { "bar": 5, "chord": "F" },
+    { "bar": 6, "chord": "G" },
+    { "bar": 7, "chord": "Dm" },
+    { "bar": 8, "chord": "G" },
+    { "bar": 9, "chord": "C" },
+    { "bar": 10, "chord": "Am" },
+    { "bar": 11, "chord": "F" },
+    { "bar": 12, "chord": "C" }
+  ],
+  "accompaniment": { "pattern": "arpeggio" },
+  "notes": [
+    {
+      "hand": "right",
+      "bar": 1,
+      "beat": 1,
+      "pitch": "E4",
+      "duration": 2,
+      "velocity": 60
+    },
+    {
+      "hand": "right",
+      "bar": 2,
+      "beat": 1,
+      "pitch": "G4",
+      "duration": 2,
+      "velocity": 58
+    }
+  ]
+}
