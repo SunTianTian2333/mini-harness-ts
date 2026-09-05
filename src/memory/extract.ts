@@ -27,7 +27,7 @@ function messageText(message: ChatMessage): string {
   return "";
 }
 
-function dialogueText(messages: ChatMessage[], maxMessages = 12): string {
+function dialogueText(messages: ChatMessage[], maxMessages = 12, maxChars = 8000): string {
   const lines: string[] = [];
   for (const message of messages.slice(-maxMessages)) {
     const text = messageText(message).trim();
@@ -35,11 +35,10 @@ function dialogueText(messages: ChatMessage[], maxMessages = 12): string {
       lines.push(`${message.role}: ${text}`);
     }
   }
-  return lines.join("\n").slice(0, 8000);
+  return lines.join("\n").slice(0, maxChars);
 }
 
-export async function extractMemories(cwd: string, messages: ChatMessage[]): Promise<number> {
-  const dialogue = dialogueText(messages);
+async function extractMemoriesFromDialogue(cwd: string, dialogue: string): Promise<number> {
   if (!dialogue) {
     return 0;
   }
@@ -96,4 +95,18 @@ export async function extractMemories(cwd: string, messages: ChatMessage[]): Pro
     process.stdout.write(`\n\x1b[33m[memory] extraction skipped: ${message}\x1b[0m\n`);
     return 0;
   }
+}
+
+export async function extractMemories(cwd: string, messages: ChatMessage[]): Promise<number> {
+  return extractMemoriesFromDialogue(cwd, dialogueText(messages));
+}
+
+/** Bench ingest: one context chunk (may exceed default 8KB dialogue window). */
+export async function extractMemoriesFromText(cwd: string, text: string, maxChars = 32_000): Promise<number> {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return 0;
+  }
+  const dialogue = `user: ${trimmed}`.slice(0, maxChars);
+  return extractMemoriesFromDialogue(cwd, dialogue);
 }

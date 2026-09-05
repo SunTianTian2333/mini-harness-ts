@@ -1,3 +1,4 @@
+import type { AssembledToolPool } from "../mcp/types.js";
 import { injectBackgroundResults } from "../background/inject.js";
 import { triggerHooks, triggerSideEffectHooks } from "../hooks/registry.js";
 import { createAssistantTurn } from "../llm/client.js";
@@ -21,10 +22,15 @@ function latestUserRequest(messages: ChatMessage[], fallback: string): string {
   return fallback;
 }
 
+export type RunLoopOptions = {
+  toolPool?: AssembledToolPool;
+};
+
 export async function runLoop(
   messages: ChatMessage[],
   cwd: string,
   activeRequest: string,
+  options?: RunLoopOptions,
 ): Promise<string> {
   const todoReminder = new TodoReminderTracker();
   let reactiveRetries = 0;
@@ -36,7 +42,7 @@ export async function runLoop(
     const request = latestUserRequest(messages, activeRequest);
     await prepareContext(messages, cwd, request);
     const system = await buildSystemPrompt(cwd, messages);
-    const toolPool = assembleToolPool();
+    const toolPool = options?.toolPool ?? assembleToolPool();
 
     let msg;
     let finishReason;

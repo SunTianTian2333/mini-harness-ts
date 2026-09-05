@@ -33,6 +33,7 @@ export class BackgroundManager {
   private readonly results = new Map<string, string>();
   private readonly ready: string[] = [];
   private readonly running = new Set<ChildProcess>();
+  private onReadyListeners: Array<() => void> = [];
   private counter = 0;
 
   start(command: string, cwd: string, toolUseId: string): string {
@@ -101,6 +102,24 @@ export class BackgroundManager {
     this.results.set(taskId, summary);
     this.ready.push(taskId);
     process.stdout.write(`\n\x1b[90m[background]\x1b[0m finished ${taskId}: ${status}\n`);
+    this.emitReady();
+  }
+
+  hasReady(): boolean {
+    return this.ready.length > 0;
+  }
+
+  onReady(listener: () => void): () => void {
+    this.onReadyListeners.push(listener);
+    return () => {
+      this.onReadyListeners = this.onReadyListeners.filter((entry) => entry !== listener);
+    };
+  }
+
+  private emitReady(): void {
+    for (const listener of this.onReadyListeners) {
+      listener();
+    }
   }
 
   async waitUntilReady(timeoutMs = 5_000): Promise<void> {

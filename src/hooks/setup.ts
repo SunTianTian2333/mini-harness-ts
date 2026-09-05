@@ -12,6 +12,21 @@ import type { LlmResponsePayload } from "../session/types.js";
 import type { ToolCallBlock } from "./types.js";
 import type { ChatMessage } from "../runtime/types.js";
 
+export function setupBenchHooks(): { getTurnCount: () => number } {
+  clearHooks();
+
+  let turnCount = 0;
+  registerHook("TurnStart", (...args) => {
+    turnCount += 1;
+    return null;
+  });
+  registerHook("Stop", () => null);
+
+  return {
+    getTurnCount: () => turnCount,
+  };
+}
+
 export function setupDefaultHooks(cwd: string, sessionStore?: SessionStore): void {
   clearHooks();
 

@@ -1,4 +1,5 @@
 import { promptUser } from "../runtime/prompt-io.js";
+import { getTurnSource } from "../runtime/turn-source.js";
 import { safePath } from "../tools/file.js";
 import { getMcpToolPolicy } from "../mcp/policy.js";
 import { isMcpToolName } from "../mcp/names.js";
@@ -106,6 +107,10 @@ export function createPermissionHook(workdir: string) {
 
     const ruleReason = checkRules(block.name, block.input, workdir);
     if (ruleReason) {
+      if (getTurnSource() === "auto") {
+        process.stdout.write(`\n\x1b[31m[blocked]\x1b[0m ${ruleReason} (auto turn)\n`);
+        return "Permission denied.";
+      }
       const allowed = await askUser(block.name, block.input, ruleReason);
       if (!allowed) {
         return "Permission denied.";
@@ -115,6 +120,10 @@ export function createPermissionHook(workdir: string) {
     if (isMcpToolName(block.name)) {
       const policy = getMcpToolPolicy(block.name);
       if (policy !== "allow") {
+        if (getTurnSource() === "auto") {
+          process.stdout.write("\n\x1b[31m[blocked]\x1b[0m External MCP tool (auto turn)\n");
+          return "Permission denied.";
+        }
         const allowed = await askUser(block.name, block.input, "External MCP tool");
         if (!allowed) {
           return "Permission denied.";

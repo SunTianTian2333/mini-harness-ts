@@ -6,10 +6,11 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/main.ts",
+    "bench": "tsx bench/run.ts",
     "build": "tsc",
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/**/*.test.ts"
+    "test": "tsx --test src/**/*.test.ts bench/**/*.test.ts"
   },
   "engines": {
     "node": ">=22"

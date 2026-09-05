@@ -1,9 +1,10 @@
-import * as readline from "node:readline/promises";
+import * as readline from "node:readline";
 import { stdin as input, stdout as output } from "node:process";
 import { config as loadEnv } from "dotenv";
 
-import { runLoop } from "./agent/loop.js";
 import { shutdownBackgroundTasks } from "./background/manager.js";
+import { EventQueue } from "./events/queue.js";
+import { HarnessSession } from "./events/session.js";
 import {
   autoConnectConfiguredMcpServers,
   listConnectedMcpServers,
@@ -11,7 +12,6 @@ import {
 } from "./mcp/connect.js";
 import { setMcpWorkspaceCwd } from "./mcp/registry.js";
 import { setupDefaultHooks } from "./hooks/setup.js";
-import { triggerSideEffectHooks } from "./hooks/registry.js";
 import { getModelId } from "./llm/client.js";
 import { migrateLegacyWorkspaceLayout } from "./runtime/migrate.js";
 import {
@@ -31,6 +31,8 @@ import {
   clearPromptFn,
   setPromptFn,
 } from "./runtime/prompt-io.js";
+
+const PROMPT = "\x1b[36mp11 >> \x1b[0m";
 
 function parseCliArgs(argv: string[]): {
   resumeId?: string;
@@ -54,6 +56,60 @@ function parseCliArgs(argv: string[]): {
   }
 
   return { resumeId, listSessions, strictMcp };
+}
+
+async function runEventHarness(
+  history: ChatMessage[],
+  cwd: string,
+  rl: readline.Interface,
+): Promise<void> {
+  const queue = new EventQueue();
+  const harness = new HarnessSession(cwd, history, queue);
+  const unbindBackground = harness.bindBackgroundEvents();
+  let running = true;
+
+  const consumer = (async () => {
+    while (running || queue.hasPending()) {
+      let event;
+      try {
+        event = await queue.waitNext();
+      } catch {
+        break;
+      }
+      const answer = await harness.runTurn(event);
+      if (answer.trim().length > 0) {
+        console.log(`\n${answer}\n`);
+      }
+      if (running) {
+        rl.prompt();
+      }
+    }
+  })();
+
+  rl.setPrompt(PROMPT);
+  rl.prompt();
+
+  await new Promise<void>((resolve) => {
+    rl.on("line", (line) => {
+      const query = line.trim();
+      if (query.length === 0 || query.toLowerCase() === "q" || query.toLowerCase() === "exit") {
+        running = false;
+        queue.close();
+        rl.close();
+        return;
+      }
+      queue.push({ type: "user", query });
+    });
+
+    rl.on("close", () => {
+      running = false;
+      queue.close();
+      resolve();
+    });
+  });
+
+  await consumer;
+  unbindBackground();
 }
 
 async function main(): Promise<void> {
@@ -123,7 +179,7 @@ async function main(): Promise<void> {
         });
     });
 
-    console.log("mini-harness-ts · Phase 10: MCP");
+    console.log("mini-harness-ts · Phase 11: multi-event turn");
     console.log(`Workspace: ${cwd}`);
     console.log(`Workspace store: ${getMiniHarnessRoot(cwd)}`);
     console.log(`Model: ${model}`);
@@ -136,23 +192,18 @@ async function main(): Promise<void> {
     if (connectedMcp.length > 0) {
       console.log(`Connected MCP servers: ${connectedMcp.join(", ")}`);
     }
-    console.log("Enter a task, or q to quit.\n");
+    console.log("Enter a task, or q to quit. Background tasks can auto-trigger turns.\n");
 
     const rl = readline.createInterface({ input, output });
-    setPromptFn((label) => rl.question(label));
+    setPromptFn(
+      (label) =>
+        new Promise((resolve) => {
+          rl.question(label, resolve);
+        }),
+    );
 
     try {
-      while (true) {
-        const query = (await rl.question("\x1b[36mp6 >> \x1b[0m")).trim();
-        if (query.length === 0 || query.toLowerCase() === "q" || query.toLowerCase() === "exit") {
-          break;
-        }
-
-        await triggerSideEffectHooks("UserPromptSubmit", query);
-        history.push({ role: "user", content: query });
-        const answer = await runLoop(history, cwd, query);
-        console.log(`\n${answer}\n`);
-      }
+      await runEventHarness(history, cwd, rl);
     } finally {
       rl.close();
       clearPromptFn();

@@ -2,3 +2,4 @@ node_modules/
 dist/
 *.log
 .mini-harness/
+bench-runs/

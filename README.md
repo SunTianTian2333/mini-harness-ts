@@ -175,6 +175,7 @@ npm test
 | P7 | Context Compact（s08 对齐） | ✅ |
 | P8 | Task System（s10 对齐） | ✅ |
 | P9 | Background bash（s11 对齐） | ✅ |
+| P11 | 多事件源 turn（s15 子集） | ✅ |
 | P10 | MCP + 动态 tool pool（stdio + autoConnect） | ✅ |
 
 ## 待实现清单
@@ -183,14 +184,13 @@ npm test
 
 | 优先级 | Phase / 章 | 机制 | 状态 |
 |--------|------------|------|------|
-| 1 | **P11** · s15 | 多事件源 turn：background/cron 唤醒 loop | ⭐ **推荐下一项** |
-| 2 | s06 | Subagent：`task` 工具、独立 messages 委派 | 简历 ROI 高 |
+| 1 | s06 | Subagent：`task` 工具、独立 messages 委派 | ⭐ 推荐下一项 |
+| 2 | s12 | Cron：定时 prompt 入队（接 EventQueue） | 未排 Phase |
 | 3 | s17 | Goal Loop：Stop 时独立 evaluator | 未排 Phase |
-| 4 | s12 | Cron：定时 prompt 入队 | 未排 Phase |
-| 5 | s16 | Workflow：固定编排 + journal 续跑 | 未排 Phase |
-| 6 | s13 | Agent Teams：Lead/Teammate + Task 板 | 未排 Phase |
+| 4 | s16 | Workflow：固定编排 + journal 续跑 | 未排 Phase |
+| 5 | s13 | Agent Teams：Lead/Teammate + Task 板 | 未排 Phase |
 
-**依赖：** P11 至少依赖 P9；s13 强依赖 P8；s12 有意义需 P11。
+**依赖：** s13 强依赖 P8；s12 可接 P11 EventQueue。
 
 **暂未列入：** Error recovery 全量、Worktree、ConsoleBroker（见路线图 §5）。
 
@@ -204,7 +204,8 @@ npm test
 | Hook 扩展 | ✅ `hooks/registry.ts` | s04 |
 | Todo / Reminder | ✅ `todo/` + PostToolBatch | s05 |
 | Task System | ✅ `task/` + 6 tools | s10 |
-| Background bash | ✅ `background/` + run_in_background | s11 |
+| Background bash | ✅ `background/` + EventQueue 唤醒 | s11 |
+| Integrated turn | ✅ `events/` + s15 子集 | s15 |
 | Skill Loading | ✅ `skill/` + load_skill | s07 |
 | Session 持久化 | ✅ `session/` + SQLite | —（对照 dsh L2） |
 | Memory / MCP | ✅ memory（P6）；✅ MCP mock（P10） | s09 / s14 |
