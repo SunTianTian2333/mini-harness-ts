@@ -10,6 +10,7 @@ import type { ChatMessage } from "../runtime/types.js";
 import { LOOP_MAX_TURNS_EXCEEDED, MAX_TURNS } from "../runtime/types.js";
 import { TodoReminderTracker } from "../todo/reminder.js";
 import { assembleToolPool } from "../tools/index.js";
+import { applyGoalGate } from "../goal/gate.js";
 import { runToolBatch } from "./tool-batch.js";
 
 function latestUserRequest(messages: ChatMessage[], fallback: string): string {
@@ -28,6 +29,7 @@ export type RunLoopOptions = {
   toolPool?: AssembledToolPool;
   mode?: "parent" | "subagent";
   maxTurns?: number;
+  skipGoalGate?: boolean;
   createAssistantTurn?: AssistantTurnFn;
   buildSystemPrompt?: (cwd: string, messages: ChatMessage[]) => Promise<string> | string;
 };
@@ -90,12 +92,33 @@ export async function runLoop(
     messages.push(assistantEntry);
 
     if (!msg.tool_calls?.length) {
+      const assistantText = msg.content ?? "(empty response)";
+      const goalOutcome = await applyGoalGate(
+        messages,
+        assistantText,
+        isSubagent || options?.skipGoalGate === true,
+      );
+      if (goalOutcome.type === "continue") {
+        continue;
+      }
+      if (goalOutcome.type === "defer") {
+        return goalOutcome.text;
+      }
+      if (goalOutcome.type === "return") {
+        const force = await triggerHooks("Stop", messages);
+        if (force) {
+          messages.push({ role: "user", content: force });
+          continue;
+        }
+        return goalOutcome.text;
+      }
+
       const force = await triggerHooks("Stop", messages);
       if (force) {
         messages.push({ role: "user", content: force });
         continue;
       }
-      return msg.content ?? "(empty response)";
+      return assistantText;
     }
 
     const { results: toolResults, compactRequested } = await runToolBatch(

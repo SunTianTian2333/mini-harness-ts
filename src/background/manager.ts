@@ -109,6 +109,10 @@ export class BackgroundManager {
     return this.ready.length > 0;
   }
 
+  hasRunning(): boolean {
+    return this.running.size > 0;
+  }
+
   onReady(listener: () => void): () => void {
     this.onReadyListeners.push(listener);
     return () => {

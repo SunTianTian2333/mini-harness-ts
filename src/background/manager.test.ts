@@ -34,12 +34,14 @@ describe("BackgroundManager", () => {
 
     const taskId = manager.start('sleep 0.1 && echo "bg-ok"', cwd, "tool-1");
     assert.match(taskId, /^bg_\d{4}$/);
+    assert.equal(manager.hasRunning(), true);
 
     const collected = await waitForCollect(manager);
     assert.equal(collected.length, 1);
     assert.equal(collected[0]?.taskId, taskId);
     assert.equal(collected[0]?.task.status, "completed");
     assert.match(collected[0]?.summary ?? "", /bg-ok/);
+    assert.equal(manager.hasRunning(), false);
   });
 
   it("marks non-zero exit as failed", async () => {

@@ -46,6 +46,7 @@ TypeScript 极简 Agent Harness：Agent Loop + Tool Calling。对照 [learn-clau
 | `src/events/` | EventQueue + HarnessSession（P11） |
 | `src/subagent/` | Subagent 嵌套 loop + 子工具池（s06） |
 | `src/cron/` | Cron 调度 + `.mini-harness/crons/`（s12） |
+| `src/goal/` | Goal Loop：`/goal` CLI + evaluator gate（s17） |
 | `src/tools/cron.ts` | schedule_cron / list_crons / cancel_cron |
 | `src/tools/subagent.ts` | run_subagent 工具 schema |
 | `src/runtime/types.ts` | 类型与常量 |
@@ -101,6 +102,21 @@ npm run dev -- --list-sessions
 npm run dev -- --strict-mcp   # autoConnect 失败时退出（默认仅警告）
 npm test
 ```
+
+## Goal Loop（s17）
+
+设完成条件后，模型无 tool_calls 时不会立刻结束，而是由独立 evaluator（无 tools 的 LLM JSON 调用）判断是否达成：
+
+```text
+/goal npm test passes with zero failures   # 设 goal 并立即开干
+/goal                                      # 查看状态
+/goal clear                                # 清除（也支持 off/reset/none/cancel）
+```
+
+- 单 session 内存存储；subagent / bench 不跑 goal gate
+- background 仍在跑时 **defer**（结束当前 turn，不评估；background 完成后 EventQueue 自动续跑）
+- block 轮跳过 Stop hook（含 memory extract）；`GOAL_BLOCK_CAP` 默认 5
+- `/goalkeeper` 等普通输入不会被误判为 goal 命令
 
 ## MCP 配置（P10b）
 
@@ -183,6 +199,7 @@ npm test
 | P11 | 多事件源 turn（s15 子集） | ✅ |
 | s06 | Subagent：`run_subagent` 独立 messages 委派 | ✅ |
 | s12 | Cron：`schedule_cron` + EventQueue 唤醒 | ✅ |
+| s17 | Goal Loop：`/goal` + Stop evaluator gate | ✅ |
 | P10 | MCP + 动态 tool pool（stdio + autoConnect） | ✅ |
 
 ## 待实现清单
@@ -191,9 +208,8 @@ npm test
 
 | 优先级 | Phase / 章 | 机制 | 状态 |
 |--------|------------|------|------|
-| 1 | s17 | Goal Loop：Stop 时独立 evaluator | 未排 Phase |
-| 2 | s16 | Workflow：固定编排 + journal 续跑 | 未排 Phase |
-| 3 | s13 | Agent Teams：Lead/Teammate + Task 板 | 未排 Phase |
+| 1 | s16 | Workflow：固定编排 + journal 续跑 | 未排 Phase |
+| 2 | s13 | Agent Teams：Lead/Teammate + Task 板 | 未排 Phase |
 
 **依赖：** s13 强依赖 P8；s12 可接 P11 EventQueue。
 

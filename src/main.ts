@@ -2,6 +2,8 @@ import * as readline from "node:readline";
 import { stdin as input, stdout as output } from "node:process";
 import { config as loadEnv } from "dotenv";
 
+import { parseGoalCommand } from "./goal/cli.js";
+import { getGoalController } from "./goal/singleton.js";
 import { shutdownBackgroundTasks } from "./background/manager.js";
 import { CronScheduler } from "./cron/scheduler.js";
 import { CronStore } from "./cron/store.js";
@@ -103,6 +105,22 @@ async function runEventHarness(
         rl.close();
         return;
       }
+
+      const goalCommand = parseGoalCommand(query);
+      if (goalCommand.handled) {
+        console.log(`\n${goalCommand.output}\n`);
+        if (goalCommand.beginQuery) {
+          getGoalController().beginQuery();
+        }
+        if (goalCommand.autoStart) {
+          queue.push({ type: "user", query: goalCommand.autoStart });
+        } else {
+          rl.prompt();
+        }
+        return;
+      }
+
+      getGoalController().beginQuery();
       queue.push({ type: "user", query });
     });
 
@@ -185,7 +203,7 @@ async function main(): Promise<void> {
         });
     });
 
-    console.log("mini-harness-ts · Phase 12: cron scheduler");
+    console.log("mini-harness-ts · Phase 17: goal loop");
     console.log(`Workspace: ${cwd}`);
     console.log(`Workspace store: ${getMiniHarnessRoot(cwd)}`);
     console.log(`Model: ${model}`);
@@ -198,7 +216,9 @@ async function main(): Promise<void> {
     if (connectedMcp.length > 0) {
       console.log(`Connected MCP servers: ${connectedMcp.join(", ")}`);
     }
-    console.log("Enter a task, or q to quit. Background and cron jobs can auto-trigger turns.\n");
+    console.log(
+      "Enter a task, /goal <condition> for completion gating, or q to quit. Background and cron jobs can auto-trigger turns.\n",
+    );
 
     const rl = readline.createInterface({ input, output });
     setPromptFn(

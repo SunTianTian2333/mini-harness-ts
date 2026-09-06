@@ -1,3 +1,4 @@
+import { getGoalController } from "../goal/singleton.js";
 import { getSkillLoader } from "../skill/loader.js";
 import { listConnectedMcpServers } from "../mcp/connect.js";
 import { loadRecalledMemories, type TextCompletion } from "../memory/recall.js";
@@ -36,6 +37,14 @@ export async function buildSystemPrompt(
   const connectedMcp = listConnectedMcpServers();
   if (connectedMcp.length > 0) {
     sections.push(`Connected MCP servers: ${connectedMcp.join(", ")}`);
+  }
+
+  const activeGoal = getGoalController().active;
+  if (activeGoal) {
+    sections.push(
+      `Active goal completion condition: ${activeGoal.condition}\n` +
+        "Report concrete command results and verification evidence so an independent evaluator can judge completion.",
+    );
   }
 
   return sections.join("\n\n");
