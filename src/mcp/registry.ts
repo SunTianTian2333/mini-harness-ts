@@ -55,6 +55,17 @@ export function assembleToolPool(): AssembledToolPool {
       });
       continue;
     }
+    if (toolName === "run_subagent") {
+      executors.set(toolName, async (args, cwd) => {
+        const prompt = args.prompt;
+        if (typeof prompt !== "string" || prompt.trim().length === 0) {
+          return "Error: run_subagent requires a non-empty prompt string";
+        }
+        const { runSubagent } = await import("../subagent/run.js");
+        return runSubagent(prompt.trim(), cwd);
+      });
+      continue;
+    }
     executors.set(toolName, (args, cwd) => executeBuiltinTool(toolName, args, cwd));
   }
 

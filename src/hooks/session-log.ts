@@ -1,20 +1,30 @@
 import type { SessionStore } from "../session/store.js";
 import type { LlmResponsePayload } from "../session/types.js";
+import { isSubagentContext } from "../subagent/context.js";
 import type { ToolCallBlock } from "./types.js";
 
 export function createSessionLogHooks(store: SessionStore) {
   return {
     userMessage(query: string): null {
+      if (isSubagentContext()) {
+        return null;
+      }
       store.append("user/message", { content: query });
       return null;
     },
 
     turnStart(turnIndex: number): null {
+      if (isSubagentContext()) {
+        return null;
+      }
       store.append("turn/start", { turn_index: turnIndex });
       return null;
     },
 
     llmResponse(payload: LlmResponsePayload): null {
+      if (isSubagentContext()) {
+        return null;
+      }
       store.append("llm/response", {
         content: payload.content,
         tool_calls: payload.tool_calls ?? null,
@@ -24,11 +34,17 @@ export function createSessionLogHooks(store: SessionStore) {
     },
 
     toolStart(block: ToolCallBlock): null {
+      if (isSubagentContext()) {
+        return null;
+      }
       store.append("tool/start", { id: block.id, name: block.name, input: block.input });
       return null;
     },
 
     toolDenied(block: ToolCallBlock, reason: string): null {
+      if (isSubagentContext()) {
+        return null;
+      }
       store.append("tool/denied", {
         id: block.id,
         name: block.name,
@@ -40,6 +56,9 @@ export function createSessionLogHooks(store: SessionStore) {
     },
 
     toolResult(block: ToolCallBlock, output: string): null {
+      if (isSubagentContext()) {
+        return null;
+      }
       store.append("tool/result", { id: block.id, name: block.name, content: output });
       return null;
     },

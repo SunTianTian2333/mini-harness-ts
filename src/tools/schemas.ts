@@ -14,6 +14,7 @@ import { runLoadSkill, LOAD_SKILL_TOOL } from "./skill.js";
 import { COMPACT_TOOL, runCompact } from "./compact.js";
 import { CONNECT_MCP_TOOL } from "./connect-mcp.js";
 import { TASK_TOOLS } from "./task.js";
+import { RUN_SUBAGENT_TOOL } from "./subagent.js";
 
 import type { ChatTool } from "../runtime/types.js";
 
@@ -28,4 +29,5 @@ export const BUILTIN_TOOL_SCHEMAS: ChatTool[] = [
   LOAD_SKILL_TOOL,
   COMPACT_TOOL,
   CONNECT_MCP_TOOL,
+  RUN_SUBAGENT_TOOL,
 ];

@@ -12,6 +12,7 @@ import {
   getBackgroundManager,
   shouldRunBackground,
 } from "../background/manager.js";
+import { isSubagentContext } from "../subagent/context.js";
 
 function parseToolArgs(raw: string): Record<string, unknown> | null {
   try {
@@ -59,7 +60,8 @@ export async function runToolBatch(
     }
 
     const block = toToolCallBlock(tc.id, tc.function.name, args);
-    process.stdout.write(`\x1b[36m${formatToolLabel(block.name, block.input)}\x1b[0m\n`);
+    const subPrefix = isSubagentContext() ? "[sub] " : "";
+    process.stdout.write(`\x1b[36m${subPrefix}${formatToolLabel(block.name, block.input)}\x1b[0m\n`);
 
     if (block.name === "compact") {
       const output = "Compaction requested after this tool batch.";

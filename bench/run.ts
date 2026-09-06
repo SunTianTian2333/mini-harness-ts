@@ -158,10 +158,10 @@ async function runBench(options: CliOptions): Promise<string> {
 
       const item = qaItems[queryIndex];
       const benchHooks = setupBenchHooks();
-      const history: ChatMessage[] = [];
-      const queryStart = Date.now();
+      const history: ChatMessage[] = [{ role: "user", content: item.query }];
 
       console.log(`[bench] query ${globalQueryIndex} (${item.qa_pair_id ?? "no-id"})...`);
+      const queryStart = Date.now();
       const output = await runLoop(history, ctxCwd, item.query, { toolPool: emptyToolPool() });
       const queryTimeSec = (Date.now() - queryStart) / 1000;
       timeCost.push((Date.now() - benchStart) / 1000);

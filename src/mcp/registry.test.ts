@@ -58,4 +58,10 @@ describe("mcp registry", () => {
     await connectMcp("docs");
     assert.match(await connectMcp("docs"), /already connected/);
   });
+
+  it("validates run_subagent prompt before spawning sub loop", async () => {
+    const pool = assembleToolPool();
+    assert.match(await pool.execute("run_subagent", {}, "/tmp"), /non-empty prompt/);
+    assert.match(await pool.execute("run_subagent", { prompt: "   " }, "/tmp"), /non-empty prompt/);
+  });
 });

@@ -7,3 +7,5 @@ export type ChatMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam;
 export type ChatTool = OpenAI.Chat.Completions.ChatCompletionTool;
 
 export const MAX_TURNS = 100;
+
+export const LOOP_MAX_TURNS_EXCEEDED = "超过最大轮数，未得到最终回答";

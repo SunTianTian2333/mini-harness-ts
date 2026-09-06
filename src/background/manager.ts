@@ -177,6 +177,11 @@ export function formatBackgroundPlaceholder(taskId: string): string {
   return `[Background task ${taskId} started] The result will be collected on a later turn.`;
 }
 
+import { isSubagentContext } from "../subagent/context.js";
+
 export function shouldRunBackground(toolName: string, input: Record<string, unknown>): boolean {
+  if (isSubagentContext()) {
+    return false;
+  }
   return toolName === "bash" && input.run_in_background === true;
 }

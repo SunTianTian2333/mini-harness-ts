@@ -7,7 +7,7 @@ import { compactHistory, isContextLengthError, reactiveCompact } from "../compac
 import { MAX_REACTIVE_RETRIES } from "../compact/types.js";
 import { buildSystemPrompt } from "../runtime/prompt.js";
 import type { ChatMessage } from "../runtime/types.js";
-import { MAX_TURNS } from "../runtime/types.js";
+import { LOOP_MAX_TURNS_EXCEEDED, MAX_TURNS } from "../runtime/types.js";
 import { TodoReminderTracker } from "../todo/reminder.js";
 import { assembleToolPool } from "../tools/index.js";
 import { runToolBatch } from "./tool-batch.js";
@@ -22,8 +22,14 @@ function latestUserRequest(messages: ChatMessage[], fallback: string): string {
   return fallback;
 }
 
+export type AssistantTurnFn = typeof createAssistantTurn;
+
 export type RunLoopOptions = {
   toolPool?: AssembledToolPool;
+  mode?: "parent" | "subagent";
+  maxTurns?: number;
+  createAssistantTurn?: AssistantTurnFn;
+  buildSystemPrompt?: (cwd: string, messages: ChatMessage[]) => Promise<string> | string;
 };
 
 export async function runLoop(
@@ -34,20 +40,30 @@ export async function runLoop(
 ): Promise<string> {
   const todoReminder = new TodoReminderTracker();
   let reactiveRetries = 0;
+  const isSubagent = options?.mode === "subagent";
+  const maxTurns = options?.maxTurns ?? MAX_TURNS;
+  const llm = options?.createAssistantTurn ?? createAssistantTurn;
+  const resolveSystemPrompt =
+    options?.buildSystemPrompt ??
+    ((cwdValue: string, messageHistory: ChatMessage[]) => buildSystemPrompt(cwdValue, messageHistory));
 
-  for (let turn = 0; turn < MAX_TURNS; turn += 1) {
+  for (let turn = 0; turn < maxTurns; turn += 1) {
     await triggerSideEffectHooks("TurnStart", turn);
-    injectBackgroundResults(messages);
+    if (!isSubagent) {
+      injectBackgroundResults(messages);
+    }
 
     const request = latestUserRequest(messages, activeRequest);
-    await prepareContext(messages, cwd, request);
-    const system = await buildSystemPrompt(cwd, messages);
+    if (!isSubagent) {
+      await prepareContext(messages, cwd, request);
+    }
+    const system = await resolveSystemPrompt(cwd, messages);
     const toolPool = options?.toolPool ?? assembleToolPool();
 
     let msg;
     let finishReason;
     try {
-      ({ message: msg, finishReason } = await createAssistantTurn(system, messages, toolPool.tools));
+      ({ message: msg, finishReason } = await llm(system, messages, toolPool.tools));
       reactiveRetries = 0;
     } catch (error) {
       if (isContextLengthError(error) && reactiveRetries < MAX_REACTIVE_RETRIES) {
@@ -92,11 +108,11 @@ export async function runLoop(
       messages.push({ role: "tool", tool_call_id: result.id, content: result.content });
     }
 
-    if (compactRequested) {
+    if (compactRequested && !isSubagent) {
       const compacted = await compactHistory(messages, cwd, request);
       messages.splice(0, messages.length, ...compacted);
     }
   }
 
-  return "超过最大轮数，未得到最终回答";
+  return LOOP_MAX_TURNS_EXCEEDED;
 }
