@@ -11,6 +11,7 @@ import {
   runListTasks,
   runUpdateTask,
 } from "./task.js";
+import { runCancelCron, runListCrons, runScheduleCron } from "./cron.js";
 
 export async function executeBuiltinTool(
   name: string,
@@ -92,6 +93,15 @@ export async function executeBuiltinTool(
     }
     case "complete_task": {
       return runCompleteTask(cwd, args.task_id);
+    }
+    case "schedule_cron": {
+      return runScheduleCron(cwd, args.cron, args.prompt, args.recurring, args.durable);
+    }
+    case "list_crons": {
+      return runListCrons(cwd);
+    }
+    case "cancel_cron": {
+      return runCancelCron(cwd, args.job_id);
     }
     default:
       return `Error: Unknown tool "${name}"`;

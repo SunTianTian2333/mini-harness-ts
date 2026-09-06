@@ -45,6 +45,8 @@ TypeScript 极简 Agent Harness：Agent Loop + Tool Calling。对照 [learn-clau
 | `src/tools/connect-mcp.ts` | connect_mcp 工具（P10） |
 | `src/events/` | EventQueue + HarnessSession（P11） |
 | `src/subagent/` | Subagent 嵌套 loop + 子工具池（s06） |
+| `src/cron/` | Cron 调度 + `.mini-harness/crons/`（s12） |
+| `src/tools/cron.ts` | schedule_cron / list_crons / cancel_cron |
 | `src/tools/subagent.ts` | run_subagent 工具 schema |
 | `src/runtime/types.ts` | 类型与常量 |
 
@@ -180,6 +182,7 @@ npm test
 | P9 | Background bash（s11 对齐） | ✅ |
 | P11 | 多事件源 turn（s15 子集） | ✅ |
 | s06 | Subagent：`run_subagent` 独立 messages 委派 | ✅ |
+| s12 | Cron：`schedule_cron` + EventQueue 唤醒 | ✅ |
 | P10 | MCP + 动态 tool pool（stdio + autoConnect） | ✅ |
 
 ## 待实现清单
@@ -188,10 +191,9 @@ npm test
 
 | 优先级 | Phase / 章 | 机制 | 状态 |
 |--------|------------|------|------|
-| 1 | s12 | Cron：定时 prompt 入队（接 EventQueue） | 未排 Phase |
-| 2 | s17 | Goal Loop：Stop 时独立 evaluator | 未排 Phase |
-| 3 | s16 | Workflow：固定编排 + journal 续跑 | 未排 Phase |
-| 4 | s13 | Agent Teams：Lead/Teammate + Task 板 | 未排 Phase |
+| 1 | s17 | Goal Loop：Stop 时独立 evaluator | 未排 Phase |
+| 2 | s16 | Workflow：固定编排 + journal 续跑 | 未排 Phase |
+| 3 | s13 | Agent Teams：Lead/Teammate + Task 板 | 未排 Phase |
 
 **依赖：** s13 强依赖 P8；s12 可接 P11 EventQueue。
 
@@ -210,6 +212,7 @@ npm test
 | Background bash | ✅ `background/` + EventQueue 唤醒 | s11 |
 | Integrated turn | ✅ `events/` + s15 子集 | s15 |
 | Subagent | ✅ `subagent/` + run_subagent | s06 |
+| Cron Scheduler | ✅ `cron/` + EventQueue | s12 |
 | Skill Loading | ✅ `skill/` + load_skill | s07 |
 | Session 持久化 | ✅ `session/` + SQLite | —（对照 dsh L2） |
 | Memory / MCP | ✅ memory（P6）；✅ MCP mock（P10） | s09 / s14 |

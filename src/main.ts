@@ -3,6 +3,8 @@ import { stdin as input, stdout as output } from "node:process";
 import { config as loadEnv } from "dotenv";
 
 import { shutdownBackgroundTasks } from "./background/manager.js";
+import { CronScheduler } from "./cron/scheduler.js";
+import { CronStore } from "./cron/store.js";
 import { EventQueue } from "./events/queue.js";
 import { HarnessSession } from "./events/session.js";
 import {
@@ -32,7 +34,7 @@ import {
   setPromptFn,
 } from "./runtime/prompt-io.js";
 
-const PROMPT = "\x1b[36mp11 >> \x1b[0m";
+const PROMPT = "\x1b[36mp12 >> \x1b[0m";
 
 function parseCliArgs(argv: string[]): {
   resumeId?: string;
@@ -66,6 +68,9 @@ async function runEventHarness(
   const queue = new EventQueue();
   const harness = new HarnessSession(cwd, history, queue);
   const unbindBackground = harness.bindBackgroundEvents();
+  const cronStore = CronStore.forCwd(cwd);
+  const cronScheduler = new CronScheduler(cronStore, queue);
+  cronScheduler.start();
   let running = true;
 
   const consumer = (async () => {
@@ -109,6 +114,7 @@ async function runEventHarness(
   });
 
   await consumer;
+  cronScheduler.stop();
   unbindBackground();
 }
 
@@ -179,7 +185,7 @@ async function main(): Promise<void> {
         });
     });
 
-    console.log("mini-harness-ts · Phase 11: multi-event turn");
+    console.log("mini-harness-ts · Phase 12: cron scheduler");
     console.log(`Workspace: ${cwd}`);
     console.log(`Workspace store: ${getMiniHarnessRoot(cwd)}`);
     console.log(`Model: ${model}`);
@@ -192,7 +198,7 @@ async function main(): Promise<void> {
     if (connectedMcp.length > 0) {
       console.log(`Connected MCP servers: ${connectedMcp.join(", ")}`);
     }
-    console.log("Enter a task, or q to quit. Background tasks can auto-trigger turns.\n");
+    console.log("Enter a task, or q to quit. Background and cron jobs can auto-trigger turns.\n");
 
     const rl = readline.createInterface({ input, output });
     setPromptFn(

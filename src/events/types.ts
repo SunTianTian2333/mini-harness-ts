@@ -7,4 +7,10 @@ export type BackgroundHarnessEvent = {
   type: "background";
 };
 
-export type HarnessEvent = UserHarnessEvent | BackgroundHarnessEvent;
+export type CronHarnessEvent = {
+  type: "cron";
+  jobId: string;
+  prompt: string;
+};
+
+export type HarnessEvent = UserHarnessEvent | BackgroundHarnessEvent | CronHarnessEvent;

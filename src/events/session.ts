@@ -1,5 +1,7 @@
 import { formatBackgroundNotifications, BACKGROUND_AUTO_REQUEST } from "../background/format.js";
 import { getBackgroundManager } from "../background/manager.js";
+import { formatScheduledPrompt } from "../cron/format.js";
+import { CronStore } from "../cron/store.js";
 import { triggerSideEffectHooks } from "../hooks/registry.js";
 import { runLoop } from "../agent/loop.js";
 import { setTurnSource } from "../runtime/turn-source.js";
@@ -44,6 +46,18 @@ export class HarnessSession {
         await triggerSideEffectHooks("UserPromptSubmit", event.query);
         this.history.push({ role: "user", content: event.query });
         return runLoop(this.history, this.cwd, event.query);
+      }
+
+      if (event.type === "cron") {
+        setTurnSource("auto");
+        process.stdout.write("\n\x1b[35m[auto turn]\x1b[0m scheduled task\n");
+        this.history.push({
+          role: "user",
+          content: formatScheduledPrompt(event.prompt),
+        });
+        const answer = await runLoop(this.history, this.cwd, event.prompt);
+        CronStore.forCwd(this.cwd).ackDelivered(event.jobId);
+        return answer;
       }
 
       setTurnSource("auto");

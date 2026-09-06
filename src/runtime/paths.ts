@@ -33,6 +33,10 @@ export function getTasksDir(cwd: string): string {
   return join(getMiniHarnessRoot(cwd), "tasks");
 }
 
+export function getCronsDir(cwd: string): string {
+  return join(getMiniHarnessRoot(cwd), "crons");
+}
+
 export function getTranscriptsDir(cwd: string): string {
   return join(getMiniHarnessRoot(cwd), "transcripts");
 }
